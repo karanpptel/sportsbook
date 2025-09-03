@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Bounce, ToastContainer } from "react-toastify";
+import Authprovider from "./context/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Authprovider>
         {children}
         <ToastContainer
             position="top-right"
@@ -42,6 +44,7 @@ export default function RootLayout({
             theme="light"
             transition={Bounce}
           />
+        </Authprovider>
       </body>
     </html>
   );

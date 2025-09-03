@@ -42,7 +42,7 @@ export async function POST(req:Request) {
      // Generate OTP
      const otp = Math.floor(100000 + Math.random() * 900000).toString();
      const otpHash = await bcrypt.hash(otp, 10);
-     const expiryAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes validity
+     const expiryat = new Date(Date.now() + 10 * 60 * 1000); // 15 minutes validity
 
      //send otp to DB
     //  await prisma.emailOtp.create({
@@ -57,14 +57,14 @@ export async function POST(req:Request) {
         where: { email },
       update: {
         tokenHash: otpHash,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // reset expiry
+        expiresAt: expiryat, // reset expiry
         attempts: 0,
         verified: false,
       },
       create: {
         email,
         tokenHash: otpHash,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        expiresAt: expiryat,
         attempts: 0,
         verified: false,
       },

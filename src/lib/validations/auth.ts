@@ -20,7 +20,48 @@ export const signUpSchema = z.object({
   role: z.enum(["USER", "OWNER"], {
     error: "Please select a role",
   }),
-  emailVerified: z.boolean(),
+
+});
+// emailVerified: z.boolean(),
+export type SignUpInput = z.infer<typeof signUpSchema>;
+
+
+// export const loginSchema = z.object({
+//   email: z.string().email("Invalid email address"),
+//   password: z.string().min(6, "Password must be at least 6 characters"),
+// });
+
+
+// export type LoginSchema = z.infer<typeof loginSchema>;
+
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
-export type SignUpInput = z.infer<typeof signUpSchema>;
+export type VerifyOtpSchema = z.infer<typeof verifyOtpSchema>;
+
+
+export const resetPasswordSchema = z
+  .object({
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+export type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
+
+export const forgotPasswordSchema = z.object({
+  email: z.string().email("Invalid email address"),
+});
+
+
+
+
+
+
+  
