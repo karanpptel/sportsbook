@@ -58,7 +58,7 @@ const transporter = nodemailer.createTransport({
 export async function sendOTPEMail(to: string, otp: string) {
   try {
     const info = await transporter.sendMail({
-      from: `"Quick Court Booking" <${process.env.USER_EMAIL}>`,
+      from: `"Sports Booking" <${process.env.USER_EMAIL}>`,
       to,
       subject: "Your one-time verification OTP Code",
       html: `
@@ -81,7 +81,7 @@ export async function sendOTPEMail(to: string, otp: string) {
 export async function sendPasswordResetEmail(to: string, resetLink: string) {
   try {
     const info = await transporter.sendMail({
-      from: `"Quick Court Booking" <${process.env.USER_EMAIL}>`,
+      from: `"Sports Booking" <${process.env.USER_EMAIL}>`,
       to,
       subject: "Password Reset Request",
       html: `

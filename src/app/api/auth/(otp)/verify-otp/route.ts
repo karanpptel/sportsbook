@@ -23,7 +23,7 @@ export async function POST(req:Request) {
             return NextResponse.json({error: "Invalid or expired OTP"}, {status: 400});
         }
 
-        //verify otp
+        //verify otp code in database
         const isOtpValid = await bcrypt.compare(otp, otpRecord.tokenHash);
         if(!isOtpValid) {
 

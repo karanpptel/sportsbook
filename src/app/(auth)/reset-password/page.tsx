@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import Image from "next/image";
 
 import { Input } from "@/components/ui/input";
@@ -46,28 +45,18 @@ export default function ResetPassword() {
     }
   }, [token, email, router]);
 
-  const {
-    control,
-    handleSubmit,
-    formState: {  isSubmitting },
-  } = form;
+  const { control, handleSubmit, formState: { isSubmitting } } = form;
 
   const onSubmit: SubmitHandler<ResetPasswordFormValues> = async (data) => {
     try {
       setLoading(true);
-
       const res = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token,
-          email,
-          newPassword: data.password,
-        }),
+        body: JSON.stringify({ token, email, newPassword: data.password }),
       });
 
       const result = await res.json();
-
       if (!res.ok) {
         toast.error(result.message || "Failed to reset password");
         return;
@@ -83,70 +72,76 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="hidden lg:flex w-1/2 relative shadow-lg">
-          <Image
-            src="/background.png"
-            alt="Background"
-            fill
-            className="object-cover"
-            priority
-          />    
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      {/* Left visual */}
+      <div className="hidden md:flex items-center justify-center bg-muted/40">
+        <Image
+          src="/login-img.jpg"
+          alt="Reset Password"
+          width={600}
+          height={600}
+          className="h-auto w-[600px] rounded-xl shadow-sm"
+          priority
+        />
       </div>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center px-6">
-          <div className="max-w-md w-full bg-white p-10 rounded-r-lg shadow-md">
-              <h2 className="text-2xl font-bold text-center mb-6">
-                  Reset Password
-              </h2>
-              <Form {...form}>
-                  <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                      
-                      <FormField
-                          control={control}
-                          name="password"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Password</FormLabel>
-                                  <FormControl>
-                                      <Input 
-                                          type="password"
-                                          placeholder="Enter new Password" 
-                                          {...field}
-                                          className="border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
-                                          />
-                                  </FormControl>
-                                  <FormMessage className="text-red-600" />
-                              </FormItem>
-                          )}
-                      />
-
-                      <FormField
-                          control={control}
-                          name="confirmPassword"
-                          render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel className="font-semibold text-gray-700">Confirm Password</FormLabel>
-                                  <FormControl>
-                                      <Input 
-                                          type="password"
-                                          placeholder="Confirm Password" 
-                                          {...field}
-                                          className="border border-gray-300 rounded-md focus:border-indigo-500 focus:ring-indigo-500"
-                                          />
-                                  </FormControl>
-                                  <FormMessage className="text-red-600" />
-                              </FormItem>
-                          )}
-                      />
-
-                      <Button type="submit" className="w-full" disabled={loading}>
-                          {loading ? "Reseting..." : "Reset Password"}
-                      </Button>
-                  </form>
-              </Form>
+      {/* Right content */}
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-2xl border bg-background/95 p-6 shadow-sm backdrop-blur">
+          <div className="mb-6 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Reset Password
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Choose a strong new password to secure your account.
+            </p>
           </div>
+
+          <Form {...form}>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Enter new password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Confirm password"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {loading ? "Resetting..." : "Reset Password"}
+              </Button>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
-  )
+  );
 }

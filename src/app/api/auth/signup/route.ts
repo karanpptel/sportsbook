@@ -9,6 +9,9 @@ export async function POST(req:Request) {
 
    try {
      const body  = await req.json();
+     body.name = body.name?.trim();
+    body.email = body.email?.trim();
+    body.role = body.role?.toUpperCase(); // normalize
  
      const parsed = signUpSchema.safeParse(body);
      if (!parsed.success) {

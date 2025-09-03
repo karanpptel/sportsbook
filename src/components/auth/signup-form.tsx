@@ -87,21 +87,28 @@ export  function SignUpForm() {
     const onSubmit: SubmitHandler<SignUpInput> = async (data) => {
        try {
             setLoading(true)
-            const payload = {...data, image: avatar}
+            //const payload = {...data, image: avatar};
 
             const res = await fetch("/api/auth/signup", {
                 method: "POST",
-                body: JSON.stringify(payload),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
             })
 
             if (res.ok) {
                 toast.success("User created successfully");
                 router.push(`/verify?email=${encodeURIComponent(data.email)}`);
-            }else{
-                 if (res.status === 409) {
-                    toast.error("Email already registered");
-                } else {
-                  toast.error("Signup failed");
+            } else {
+                const errorData = await res.json(); // Get the error message from the server
+                if (res.status === 400 && errorData.error === "User already exists.") {
+                    toast.error("Email already registered.");
+                } else if (res.status === 400 && errorData.error && Array.isArray(errorData.error)) {
+                    // Zod validation errors, if you want to display specific messages
+                    const firstError = errorData.error[0];
+                    toast.error(`Validation failed: ${firstError.message}`);
+                }
+                else {
+                    toast.error(errorData.error || "Signup failed. Please try again.");
                 }
             }
        } catch (error) {
@@ -124,7 +131,7 @@ export  function SignUpForm() {
                 <div className="flex flex-col items-center gap-2">
                     <div className="relative w-20 h-20 rounded-full overflow-hidden border">
                         <Image
-                            src={avatar || "/avatar-default.svg"}
+                            src={avatar || "/avatar-img.jpg"}
                             alt="avatar"
                             fill
                             className="object-cover"
@@ -213,6 +220,7 @@ export  function SignUpForm() {
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
+                                    
                                     <SelectItem value="USER">Player</SelectItem>
                                     <SelectItem value="OWNER">Facility Owner</SelectItem>
                                 </SelectContent>

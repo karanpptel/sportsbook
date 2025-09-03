@@ -46,10 +46,21 @@ export function LoginForm() {
             });
             if (res?.error) {
                 toast.error(res.error);
-            } else {
-                toast.success("Login successful!");
-                router.push("/");
             }
+                toast.success("Login successful!");
+                
+
+            // Fetch the session AFTER successful login to get role
+            const sessionRes = await fetch("/api/auth/session");
+            const sessionData = await sessionRes.json();
+            const role = sessionData?.user?.role;
+
+            // Redirect based on role
+            if (role === "OWNER") router.push("/owner");
+            else if (role === "PLAYER") router.push("/player");
+            else if (role === "ADMIN") router.push("/admin");
+            else router.push("/");
+            
         } catch (error) {
             console.error("Login error:", error);
             toast.error("Login failed");

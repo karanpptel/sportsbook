@@ -1,30 +1,38 @@
-import { SignUpForm } from "@/components/auth/signup-form";
-import Image from "next/image";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+// src/app/(auth)/signup/page.tsx
+"use client";
 
-export default function SignupPage() {
+import Image from "next/image";
+import { SignUpForm } from "@/components/auth/signup-form";
+
+export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen">
-      <div className="hidden lg:flex w-1/2 relative">
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      {/* Left visual */}
+      <div className="hidden md:flex items-center justify-center bg-muted/40">
         <Image
-          src="/background.png"
-          alt="Background"
-          fill
-          className="object-cover"
+          src="/login-img.jpg"
+          alt="Sign Up"
+          width={600}
+          height={600}
+          className="h-auto w-[600px] rounded-xl shadow-sm"
+          priority
         />
       </div>
 
-      <div className="flex w-full lg:w-1/2 justify-center items-center p-6">
-        <Card className="w-full max-w-md rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center">
-              Create an Account
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SignUpForm />
-          </CardContent>
-        </Card>
+      {/* Right content */}
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-2xl border bg-background/95 p-6 shadow-sm backdrop-blur">
+          <div className="mb-6 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              Create an account
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sign up to start booking and managing sports facilities.
+            </p>
+          </div>
+
+          <SignUpForm />
+        </div>
       </div>
     </div>
   );

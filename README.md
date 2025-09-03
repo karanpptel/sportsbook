@@ -1,36 +1,133 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
+sportsbook
+├─ .qodo
+├─ components.json
+├─ eslint.config.mjs
+├─ middleware.ts
+├─ next.config.ts
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.mjs
+├─ prisma
+│  ├─ migrations
+│  │  ├─ 20250902074817_init
+│  │  │  └─ migration.sql
+│  │  ├─ 20250902185723_add_unique_to_email
+│  │  │  └─ migration.sql
+│  │  ├─ 20250902203757_add_password_reset_model
+│  │  │  └─ migration.sql
+│  │  ├─ 20250903043029_update_from_office
+│  │  │  └─ migration.sql
+│  │  └─ migration_lock.toml
+│  └─ schema.prisma
+├─ public
+│  ├─ avatar-img.jpg
+│  ├─ file.svg
+│  ├─ globe.svg
+│  ├─ login-img.jpg
+│  ├─ next.svg
+│  ├─ otp-image.jpg
+│  ├─ vercel.svg
+│  └─ window.svg
+├─ src
+│  ├─ app
+│  │  ├─ (auth)
+│  │  │  ├─ forgot-password
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ login
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ reset-password
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ signup
+│  │  │  │  └─ page.tsx
+│  │  │  └─ verify
+│  │  │     └─ page.tsx
+│  │  ├─ (dashboard)
+│  │  │  ├─ admin
+│  │  │  │  └─ page.tsx
+│  │  │  ├─ owner
+│  │  │  │  ├─ bookings
+│  │  │  │  ├─ page.tsx
+│  │  │  │  ├─ profile
+│  │  │  │  └─ venues
+│  │  │  ├
+│  │  │  └─ player
+│  │  │     ├─ bookings
+│  │  │     ├─ page.tsx
+│  │  │     └─ profile
+│  │  ├─ api
+│  │  │  ├─ auth
+│  │  │  │  ├─ (otp)
+│  │  │  │  │  ├─ resend-otp
+│  │  │  │  │  │  └─ route.ts
+│  │  │  │  │  └─ verify-otp
+│  │  │  │  │     └─ route.ts
+│  │  │  │  ├─ forgot-password
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ reset-pssword
+│  │  │  │  │  └─ route.ts
+│  │  │  │  ├─ signup
+│  │  │  │  │  └─ route.ts
+│  │  │  │  └─ [...nextauth]
+│  │  │  │     └─ route.ts
+│  │  │  ├─ dashboard
+│  │  │  │  └─ owner
+│  │  │  │     └─ route.ts
+│  │  │  ├─ protected
+│  │  │  │  └─ route.ts
+│  │  │  ├─ test-db
+│  │  │  │  └─ route.ts
+│  │  │  └─ upload
+│  │  │     └─ route.ts
+│  │  ├─ booking
+│  │  ├─ context
+│  │  │  └─ AuthProvider.tsx
+│  │  ├─ favicon.ico
+│  │  ├─ globals.css
+│  │  ├─ layout.tsx
+│  │  ├─ page.tsx
+│  │  └─ venues
+│  ├─ components
+│  │  ├─ auth
+│  │  │  ├─ login-form.tsx
+│  │  │  └─ signup-form.tsx
+│  │  ├─ booking
+│  │  ├─ dashboard
+│  │  │  └─ layout
+│  │  │     ├─ DashboardLayout.tsx
+│  │  │     ├─ LogoutButton.tsx
+│  │  │     └─ Sidebar.tsx
+│  │  ├─ layout
+│  │  ├─ owner
+│  │  ├─ player
+│  │  ├─ shared
+│  │  └─ ui
+│  │     ├─ avatar.tsx
+│  │     ├─ badge.tsx
+│  │     ├─ button.tsx
+│  │     ├─ calendar.tsx
+│  │     ├─ card.tsx
+│  │     ├─ dialog.tsx
+│  │     ├─ dropdown-menu.tsx
+│  │     ├─ form.tsx
+│  │     ├─ input-otp.tsx
+│  │     ├─ input.tsx
+│  │     ├─ label.tsx
+│  │     ├─ scroll-area.tsx
+│  │     ├─ select.tsx
+│  │     ├─ table.tsx
+│  │     └─ tabs.tsx
+│  ├─ generated
+│  └─ lib
+│     ├─ cloudinary.ts
+│     ├─ mailer.ts
+│     ├─ prisma.ts
+│     ├─ utils.ts
+│     └─ validations
+│        └─ auth.ts
+├─ tsconfig.json
+└─ types
+   └─ next-auth.d.ts
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```

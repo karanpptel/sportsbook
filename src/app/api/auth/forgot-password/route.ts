@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         });
 
         if (!user) {
-            return NextResponse.json({ message: "User not found or If that email exists in our system, a reset link has been sent." }, { status: 200 });
+            return NextResponse.json({ message: "If that email exists in our system, a reset link has been sent." }, { status: 200 });
         }
 
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         //hash reset token and save to db
         const tokenHash = await bcrypt.hash(token, SALT_ROUNDS);
 
-        const expiryAt = new Date(Date.now() + TOKEN_EXPRIY_MINUTES * 60 * 1000);
+        const expiryAt = new Date(Date.now() + TOKEN_EXPRIY_MINUTES * 60 * 1000); // 30 minutes
 
 
           // Create or update password reset token in DB

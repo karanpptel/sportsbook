@@ -20,6 +20,7 @@ export const signUpSchema = z.object({
   role: z.enum(["USER", "OWNER"], {
     error: "Please select a role",
   }),
+  image: z.string().url("Invalid image URL").optional().nullable(), 
 
 });
 // emailVerified: z.boolean(),
