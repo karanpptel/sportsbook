@@ -1,68 +1,71 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
+// Public routes (no authentication required)
+const publicRoutes = [
+  "/",
+  "/about",
+  "/venues",
+  "/contact",
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify",
+  "/api/auth",
+];
+
+// Check if route is public
+function isPublicRoute(pathname: string): boolean {
+  return publicRoutes.some(
+    (route) => pathname === route || pathname.startsWith(route + "/")
+  );
+}
+
 export default withAuth(
   function middleware(req) {
     const { pathname } = req.nextUrl;
-    const role = req.nextauth.token?.role as string | undefined;
+    const role = (req.nextauth.token?.role as string) || undefined;
 
+    // Allow access to public routes
+    if (isPublicRoute(pathname)) {
+      return NextResponse.next();
+    }
+
+    // If not logged in → redirect to login
+    if (!req.nextauth.token) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+
+    // Player-only routes
+    if (pathname.startsWith("/player") && role !== "USER") {
+      return NextResponse.redirect(new URL("/denied", req.url));
+    }
+
+    // Venue Owner-only routes
     if (pathname.startsWith("/owner") && role !== "OWNER") {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL("/denied", req.url));
     }
 
-    if (pathname.startsWith("/player") && !(role === "PLAYER" || role === "USER")) {
-      return NextResponse.redirect(new URL("/", req.url));
-    }
-
+    // Admin-only routes
     if (pathname.startsWith("/admin") && role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL("/denied", req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token, // only allow signed-in users
+      authorized: ({ token }) => !!token,
+    },
+    pages: {
+      signIn: "/login",
     },
   }
 );
 
 export const config = {
-  matcher: ["/owner/:path*", "/player/:path*", "/admin/:path*"],
+  matcher: ["/player/:path*", "/owner/:path*", "/admin/:path*", "/dashboard"],
 };
 
-
-// import { NextResponse } from "next/server";
-// import { getToken } from "next-auth/jwt";
-// import type { NextRequest } from "next/server";
-
-// export async function middleware(req: NextRequest) {
-//   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
-//   const url = new URL(req.url);
-
-//   // No token → send to login
-//   if (!token) {
-//     if (url.pathname.startsWith("/admin") || url.pathname.startsWith("/owner") || url.pathname.startsWith("/user")) {
-//       return NextResponse.redirect(new URL("/login", req.url));
-//     }
-//     return NextResponse.next();
-//   }
-
-//   // Role-based protection
-//   if (url.pathname.startsWith("/admin") && token.role !== "ADMIN") {
-//     return NextResponse.redirect(new URL("/unauthorized", req.url));
-//   }
-//   if (url.pathname.startsWith("/owner") && token.role !== "OWNER") {
-//     return NextResponse.redirect(new URL("/unauthorized", req.url));
-//   }
-//   if (url.pathname.startsWith("/user") && token.role !== "USER") {
-//     return NextResponse.redirect(new URL("/unauthorized", req.url));
-//   }
-
-//   return NextResponse.next();
-// }
-
-// // Run middleware on these routes
-// export const config = {
-//   matcher: ["/admin/:path*", "/owner/:path*", "/user/:path*"],
-// };
+//matcher: ["/dashboard/:path*", "/admin/:path*"],

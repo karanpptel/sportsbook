@@ -106,9 +106,39 @@ export const authOptions: NextAuthOptions = {
 
   pages: {
     signIn: "/auth/login",
+    signOut: "/auth/logout",
+
   },
 
+
   secret: process.env.NEXTAUTH_SECRET,
+
+
+  events: {
+    async createUser({ user }) {
+      console.log("🔥 createUser event fired with:", user);
+      try {
+         // Convert id to number (Prisma expects Int)
+        const userId = parseInt(user.id, 10);
+
+        // If the user is an OWNER, create facilityOwner record
+        if (user.role === "OWNER") {
+          await prisma.facilityOwner.create({
+            data: {
+              userId, // links facilityOwner → User
+              // add default values if your schema requires more fields
+            },
+          });
+          console.log("✅ FacilityOwner created for user:", userId);
+        }
+
+        // (Later you could do similar for "PLAYER" if you need a profile table)
+      } catch (error) {
+        console.error("Error creating facilityOwner:", error); 
+        
+      }
+    }
+  }
 };
 
      

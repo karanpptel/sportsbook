@@ -11,8 +11,8 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
-  const { data: session } = useSession();
-  const loading = !session;
+  const { data: session, status } = useSession();
+  const loading = status === "loading";
 
     useEffect(() => {
         if (!loading && !session) {

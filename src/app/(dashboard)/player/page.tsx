@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, CheckCircle, Wallet } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { ProtectedRoutes } from "@/components/dashboard/layout/ProtectedRoute";
 
 export default function PlayerDashboardPage() {
   const { data: session } = useSession();
@@ -23,7 +24,8 @@ export default function PlayerDashboardPage() {
   ];
 
   return (
-    <DashboardLayout>
+  <ProtectedRoutes allowedRoles={["USER","PLAYER"]}>
+      <DashboardLayout>
       <div className="space-y-6">
         {/* Welcome */}
         <h2 className="text-2xl font-bold text-gray-800">
@@ -75,5 +77,7 @@ export default function PlayerDashboardPage() {
         </Card>
       </div>
     </DashboardLayout>
+  </ProtectedRoutes>
+    
   );
 }

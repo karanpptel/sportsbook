@@ -12,12 +12,14 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = Number(session.user.id);
+    const userId = parseInt(session.user.id, 10);
 
-    // Get FacilityOwner id for this user
-    const ownerProfile = await prisma.facilityOwner.findUnique({
-      where: { userId },
-    });
+      // Get FacilityOwner id for this user (create if missing)
+      const ownerProfile = await prisma.facilityOwner.upsert({
+        where: { userId },
+        update: {}, // do nothing if exists
+        create: { userId }, // create a new FacilityOwner if missing
+      });
 
     if (!ownerProfile) {
       return NextResponse.json({ error: "Owner profile not found" }, { status: 404 });
@@ -41,14 +43,14 @@ export async function GET() {
 
     //Earning this month 
     const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+    const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
 
     const earningRaw =  await prisma.payment.aggregate({
         _sum: {amount: true},
         where: {
           booking: { court: { venue: { ownerId } } },
           status: "SUCCEEDED",
-          createdAt: {  gte: startOfMonth,lte: endOfMonth},
+          createdAt: {  gte: startOfMonth, lt: endOfMonth},
         }
     });
 
@@ -67,12 +69,11 @@ export async function GET() {
     });
 
 
-    return NextResponse.json({
-      stats:{
-        totalVenues,
-        activeBookings,
-        earning
-      },
+   return NextResponse.json({
+      message: ownerProfile.createdAt.getTime() === ownerProfile.updatedAt.getTime()
+        ? "Owner profile created"
+        : "Owner dashboard fetched",
+      stats: { totalVenues, activeBookings, earnings: earning },
       recentBookings: recentBookings.map((booking) => ({
         id: booking.id,
         user: booking.user.fullName,
@@ -80,7 +81,7 @@ export async function GET() {
         date: booking.startTime.toISOString().split("T")[0],
         status: booking.status,
       })),
-    })
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
