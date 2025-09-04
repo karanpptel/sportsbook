@@ -29,17 +29,17 @@ export function Sidebar({ role }: SidebarProps) {
   const menuItems =
     role === "OWNER"
       ? [
-          { title: "Dashboard", href: "/dashboard/owner", icon: <Home size={18} /> },
-          { title: "Venues", href: "/dashboard/owner/venues", icon: <MapPin size={18} /> },
-          { title: "Bookings", href: "/dashboard/owner/bookings", icon: <Calendar size={18} /> },
-          { title: "Profile", href: "/dashboard/owner/profile", icon: <User size={18} /> },
-          { title: "Settings", href: "/dashboard/owner/settings", icon: <Settings size={18} /> },
+          { title: "Dashboard", href: "/owner", icon: <Home size={18} /> },
+          { title: "Venues", href: "/owner/venues", icon: <MapPin size={18} /> },
+          { title: "Bookings", href: "/owner/bookings", icon: <Calendar size={18} /> },
+          { title: "Profile", href: "/owner/profile", icon: <User size={18} /> },
+          { title: "Settings", href: "/owner/settings", icon: <Settings size={18} /> },
         ]
       : [
-          { title: "Dashboard", href: "/dashboard/player", icon: <Home size={18} /> },
-          { title: "Book Venue", href: "/dashboard/player/bookings", icon: <Calendar size={18} /> },
-          { title: "Profile", href: "/dashboard/player/profile", icon: <User size={18} /> },
-          { title: "Settings", href: "/dashboard/player/settings", icon: <Settings size={18} /> },
+          { title: "Dashboard", href: "/player", icon: <Home size={18} /> },
+          { title: "Book Venue", href: "/player/bookings", icon: <Calendar size={18} /> },
+          { title: "Profile", href: "/player/profile", icon: <User size={18} /> },
+          { title: "Settings", href: "/player/settings", icon: <Settings size={18} /> },
         ];
 
   const renderMenuItems = () =>

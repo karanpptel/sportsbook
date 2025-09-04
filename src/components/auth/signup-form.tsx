@@ -64,7 +64,7 @@ export  function SignUpForm() {
         const formData = new FormData();
         formData.append("file", file);
     
-        const res = await fetch("/api/upload", {
+        const res = await fetch("/api/upload/avatar", {
           method: "POST",
         body: formData,
       });

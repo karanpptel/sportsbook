@@ -30,6 +30,7 @@ sportsbook
 │  ├─ otp-image.jpg
 │  ├─ vercel.svg
 │  └─ window.svg
+├─ README.md
 ├─ src
 │  ├─ app
 │  │  ├─ (auth)
@@ -48,10 +49,11 @@ sportsbook
 │  │  │  │  └─ page.tsx
 │  │  │  ├─ owner
 │  │  │  │  ├─ bookings
+│  │  │  │  │  └─ page.tsx
 │  │  │  │  ├─ page.tsx
 │  │  │  │  ├─ profile
 │  │  │  │  └─ venues
-│  │  │  ├
+│  │  │  │     └─ page.tsx
 │  │  │  └─ player
 │  │  │     ├─ bookings
 │  │  │     ├─ page.tsx
@@ -73,13 +75,22 @@ sportsbook
 │  │  │  │     └─ route.ts
 │  │  │  ├─ dashboard
 │  │  │  │  └─ owner
-│  │  │  │     └─ route.ts
+│  │  │  │     ├─ bookings
+│  │  │  │     │  └─ route.ts
+│  │  │  │     ├─ route.ts
+│  │  │  │     └─ venues
+│  │  │  │        ├─ route.ts
+│  │  │  │        └─ [id]
+│  │  │  │           └─ route.ts
 │  │  │  ├─ protected
 │  │  │  │  └─ route.ts
 │  │  │  ├─ test-db
 │  │  │  │  └─ route.ts
 │  │  │  └─ upload
-│  │  │     └─ route.ts
+│  │  │     ├─ avatar
+│  │  │     │  └─ route.ts
+│  │  │     └─ venue
+│  │  │        └─ route.ts
 │  │  ├─ booking
 │  │  ├─ context
 │  │  │  └─ AuthProvider.tsx
@@ -97,9 +108,11 @@ sportsbook
 │  │  │  └─ layout
 │  │  │     ├─ DashboardLayout.tsx
 │  │  │     ├─ LogoutButton.tsx
+│  │  │     ├─ ProtectedRoute.tsx
 │  │  │     └─ Sidebar.tsx
 │  │  ├─ layout
 │  │  ├─ owner
+│  │  │  └─ VenueListPage.tsx
 │  │  ├─ player
 │  │  ├─ shared
 │  │  └─ ui
@@ -108,6 +121,7 @@ sportsbook
 │  │     ├─ button.tsx
 │  │     ├─ calendar.tsx
 │  │     ├─ card.tsx
+│  │     ├─ carousel.tsx
 │  │     ├─ dialog.tsx
 │  │     ├─ dropdown-menu.tsx
 │  │     ├─ form.tsx
@@ -116,16 +130,20 @@ sportsbook
 │  │     ├─ label.tsx
 │  │     ├─ scroll-area.tsx
 │  │     ├─ select.tsx
+│  │     ├─ skeleton.tsx
 │  │     ├─ table.tsx
-│  │     └─ tabs.tsx
+│  │     ├─ tabs.tsx
+│  │     └─ textarea.tsx
 │  ├─ generated
 │  └─ lib
 │     ├─ cloudinary.ts
 │     ├─ mailer.ts
 │     ├─ prisma.ts
+│     ├─ slugify.ts
 │     ├─ utils.ts
 │     └─ validations
-│        └─ auth.ts
+│        ├─ auth.ts
+│        └─ venue.ts
 ├─ tsconfig.json
 └─ types
    └─ next-auth.d.ts

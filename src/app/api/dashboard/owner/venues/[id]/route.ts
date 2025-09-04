@@ -1,8 +1,9 @@
-// src/app/api/venues/[id]/route.ts
+// src/app/api/dashboard/venues/[id]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { generateUniqueSlug } from "@/lib/slugify";
 
 
 type paramsType = {
@@ -20,6 +21,7 @@ function slugify(text: string) {
     .replace(/\-\-+/g, "-");
 }
 
+// Update Venue
 export async function PATCH(req: Request, { params }: paramsType) {
   try {
     const session = await getServerSession(authOptions);
@@ -29,16 +31,23 @@ export async function PATCH(req: Request, { params }: paramsType) {
     }
 
     const venueId = parseInt(params.id, 10);
-
     const body = await req.json();
-    const { name, address, city, state, description } = body;
+
+    const { name, address, city, state, description, amenities, photos } = body;
 
     const updateData: any = { address, city, state, description };
 
-    // Only update slug if name changed
     if (name) {
       updateData.name = name;
-      updateData.slug = slugify(name);
+      updateData.slug = await generateUniqueSlug(name);
+    }
+
+    if (Array.isArray(amenities)) {
+      updateData.amenities = amenities.filter((a) => typeof a === "string");
+    }
+
+    if (Array.isArray(photos)) {
+      updateData.photos = photos.filter((p) => typeof p === "string");
     }
 
     const updatedVenue = await prisma.venue.update({
@@ -57,6 +66,7 @@ export async function PATCH(req: Request, { params }: paramsType) {
 
 
 
+
 // Delete venue
 export async function DELETE(req: Request, { params }: paramsType) {
   try {
@@ -66,26 +76,27 @@ export async function DELETE(req: Request, { params }: paramsType) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const venueId = parseInt(params.id, 10);
+    const venueId = params.id;
 
-    // Optional: Check if this venue belongs to the logged-in owner
-    const venue = await prisma.venue.findUnique({
-      where: { id: venueId },
-      select: { ownerId: true },
-    });
+  // Get venue
+  const venue = await prisma.venue.findUnique({
+    where: { id: Number(venueId) },
+    select: { id: true, ownerId: true },
+  });
 
-    if (!venue) {
-      return NextResponse.json({ error: "Venue not found" }, { status: 404 });
-    }
+  // Get current owner's profile
+  const ownerProfile = await prisma.facilityOwner.findUnique({
+    where: { userId: Number(session.user.id) },
+  });
 
-    if (venue.ownerId !== Number(session.user.id)) {
-      return NextResponse.json({ error: "You are not allowed to delete this venue" }, { status: 403 });
-    }
+  if (!venue || !ownerProfile || venue.ownerId !== ownerProfile.id) {
+    return NextResponse.json({ error: "You are not allowed to delete this venue" }, { status: 403 });
+  }
 
-    // Delete the venue
-    await prisma.venue.delete({
-      where: { id: venueId },
-    });
+
+   // Delete venue
+  await prisma.venue.delete({ where: { id: Number(venueId) } });
+
 
     return NextResponse.json({ message: "Venue deleted successfully" });
   } catch (error) {

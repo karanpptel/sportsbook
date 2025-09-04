@@ -5,6 +5,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { signInSchema } from "@/lib/validations/auth"; 
+import { getToken } from "next-auth/jwt";
 
 // Check required env variables
 ["NEXTAUTH_URL", "NEXTAUTH_SECRET"].forEach(name => {
@@ -88,7 +89,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
+        token.role = user.role;    // Add role to token
       }
       return token;
     },
@@ -97,17 +98,29 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
-        session.user.role = token.role as string;
+        session.user.role = token.role as string;   // Add role to session
       }
       return session;
     },
+
+    async redirect({ baseUrl, url }) {
+      // Role-based redirects
+      const token = await getToken({ req: url as any, secret: process.env.NEXTAUTH_SECRET });
+
+      if (token?.role === "USER") return `${baseUrl}/player`;
+      if (token?.role === "OWNER") return `${baseUrl}/owner`;
+      if (token?.role === "ADMIN") return `${baseUrl}/admin`;
+
+      return baseUrl;
+    },
+    
     
   },
 
   pages: {
-    signIn: "/auth/login",
-    signOut: "/auth/logout",
-
+    signIn: "/login",
+    error: "/login",
+  
   },
 
 

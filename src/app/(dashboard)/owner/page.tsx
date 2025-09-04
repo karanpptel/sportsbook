@@ -90,7 +90,7 @@ export default function OwnerDashboardPage() {
                       <Building className="w-8 h-8 text-gray-400 mb-2" />
                       <p className="text-gray-600 mb-3">No venues added yet</p>
                       <Button asChild>
-                        <Link href="/dashboard/owner/venues/new">
+                        <Link href="/owner/venues">
                           <PlusCircle className="w-4 h-4 mr-2" />
                           Add Your First Venue
                         </Link>

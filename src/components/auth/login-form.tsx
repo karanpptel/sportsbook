@@ -57,7 +57,7 @@ export function LoginForm() {
 
             // Redirect based on role
             if (role === "OWNER") router.push("/owner");
-            else if (role === "PLAYER") router.push("/player");
+            else if (role === "USER") router.push("/player");
             else if (role === "ADMIN") router.push("/admin");
             else router.push("/");
             

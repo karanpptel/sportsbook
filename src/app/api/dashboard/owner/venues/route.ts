@@ -4,40 +4,40 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+// Get Owner Venues
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
-    // Ensure logged-in owner
     if (!session || session.user?.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = parseInt(session.user.id, 10);
 
-    // Get FacilityOwner profile
     let ownerProfile = await prisma.facilityOwner.findUnique({
       where: { userId },
     });
 
-    // Optional: create on-demand if not exists
     if (!ownerProfile) {
-      ownerProfile = await prisma.facilityOwner.create({
-        data: { userId },
-      });
+      ownerProfile = await prisma.facilityOwner.create({ data: { userId } });
     }
 
     const ownerId = ownerProfile.id;
 
-    // Fetch all venues for this owner
     const venues = await prisma.venue.findMany({
       where: { ownerId },
       select: {
         id: true,
         name: true,
+        slug: true,
         address: true,
         city: true,
+        state: true,
+        description: true,
         approved: true,
+        amenities: true,
+        photos: true,
       },
       orderBy: { createdAt: "desc" },
     });
@@ -50,6 +50,7 @@ export async function GET() {
 }
 
 
+
 // Helper to create a slug from venue name
 function slugify(text: string) {
   return text
@@ -60,13 +61,16 @@ function slugify(text: string) {
     .replace(/[^\w\-]+/g, "")   // Remove all non-word chars
     .replace(/\-\-+/g, "-");    // Replace multiple - with single -
 }
+import {generateUniqueSlug} from "@/lib/slugify";
 
 
-
-// Add venues
+// src/app/api/dashboard/owner/venues/route.ts
+// Add Venue
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
+
+    
 
     if (!session || session.user?.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -82,19 +86,29 @@ export async function POST(req: Request) {
     const ownerId = ownerProfile.id;
 
     const body = await req.json();
-    const { name, address, city, state, description } = body;
+    const { name, address, city, state, description, amenities = [], photos = [] } = body;
 
-    const slug = slugify(name);
+    // Validation: must be arrays of strings
+    if (!Array.isArray(amenities) || !amenities.every((a) => typeof a === "string")) {
+      return NextResponse.json({ error: "Invalid amenities format" }, { status: 400 });
+    }
+    if (!Array.isArray(photos) || !photos.every((p) => typeof p === "string")) {
+      return NextResponse.json({ error: "Invalid photos format" }, { status: 400 });
+    }
+
+    const slug = await generateUniqueSlug(name);
 
     const venue = await prisma.venue.create({
       data: {
         ownerId,
-        name,
-        slug,           // ✅ must include
+        name: name,
+        slug,
         address,
         city,
         state,
         description,
+        amenities,
+        photos,
       },
     });
 
