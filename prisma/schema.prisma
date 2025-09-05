@@ -14,9 +14,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 //Models 
-
 
 model User {
   id             Int            @id @default(autoincrement())
@@ -31,31 +29,33 @@ model User {
   ownerProfileId Int?
 
   //Relationships
-  bookings       Booking[]
-  reviews        Review[]
+  bookings           Booking[]
+  reviews            Review[]
   PasswordResetToken PasswordResetToken[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  Session        Session[]
-  Account        Account[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  Session            Session[]
+  Account            Account[]
+  Notifications  Notification[]
+ 
 }
 
 model FacilityOwner {
-  id           Int      @id @default(autoincrement())
-  user         User     @relation(fields: [userId], references: [id])
-  userId       Int      @unique
+  id           Int     @id @default(autoincrement())
+  user         User    @relation(fields: [userId], references: [id])
+  userId       Int     @unique
   phone        String?
   businessName String?
   address      String?
 
   //Relation 
-  venues       Venue[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  venues    Venue[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Venue {
-  id          Int           @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   //Relationships
   owner       FacilityOwner @relation(fields: [ownerId], references: [id])
@@ -76,54 +76,54 @@ model Venue {
 
   //Relationships
 
-  courts      Court[]
-  reviews     Review[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  courts    Court[]
+  reviews   Review[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([city])
   @@index([approved])
 }
 
 model Court {
-  id           Int       @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   //Relationships
-  venue        Venue     @relation(fields: [venueId], references: [id])
+  venue        Venue  @relation(fields: [venueId], references: [id])
   venueId      Int
   name         String
   sport        String // e.g., "Badminton", "Tennis", "Football"
   pricePerHour Int // store in smallest currency unit (e.g., INR paisa OR cents)
-  currency     String    @default("INR")
+  currency     String @default("INR")
   openTime     Int // hour in 24h, e.g., 6
   closeTime    Int // hour in 24h, e.g., 22
 
   //Relationships
-  bookings     Booking[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  bookings  Booking[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([sport])
 }
 
 model Booking {
-  id             Int           @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   //Relationships
-  user           User          @relation(fields: [userId], references: [id])
-  userId         Int
-  court          Court         @relation(fields: [courtId], references: [id])
-  courtId        Int
-  startTime      DateTime
-  endTime        DateTime
-  status         BookingStatus @default(PENDING)  //  PENDING, CONFIRMED, CANCELLED, 
+  user      User          @relation(fields: [userId], references: [id])
+  userId    Int
+  court     Court         @relation(fields: [courtId], references: [id])
+  courtId   Int
+  startTime DateTime
+  endTime   DateTime
+  status    BookingStatus @default(PENDING) //  PENDING, CONFIRMED, CANCELLED, 
 
   //Relationships
-  payment        Payment?                       // PAID, UNPAID, REFUNDED
-  paymentId      Int?          @unique
-  idempotencyKey String?       @unique
+  payment        Payment? // PAID, UNPAID, REFUNDED
+  paymentId      Int?     @unique
+  idempotencyKey String?  @unique
   notes          String?
-  createdAt      DateTime      @default(now())
+  createdAt      DateTime @default(now())
 
   // Prevent two exact same startTime bookings for same court
   @@unique([courtId, startTime])
@@ -133,7 +133,7 @@ model Booking {
 }
 
 model Payment {
-  id                    Int           @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   //Relationships
   booking               Booking?      @relation(fields: [bookingId], references: [id])
@@ -153,7 +153,7 @@ model Payment {
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   //Relationships
   user      User     @relation(fields: [userId], references: [id])
@@ -170,7 +170,7 @@ model Review {
 
 model EmailOtp {
   id        Int      @id @default(autoincrement())
-  email     String    @unique
+  email     String   @unique
   tokenHash String // store hashed OTP (bcrypt or sha256 with salt)
   expiresAt DateTime
   attempts  Int      @default(0)
@@ -182,17 +182,30 @@ model EmailOtp {
 }
 
 model PasswordResetToken {
-  id          Int      @id @default(autoincrement())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  tokenHash   String  
-  expiresAt   DateTime 
-  used        Boolean  @default(false) 
-  createdAt   DateTime @default(now())
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  tokenHash String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
+  @@unique([tokenHash])
   @@index([userId])
   @@index([expiresAt])
-  @@unique([tokenHash])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int // Player or Owner
+  type      String // e.g. BOOKING_CONFIRMED, BOOKING_CANCELLED
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
 }
 
 // Optional NextAuth-compatible Session / Account models (helpful if you decide to use NextAuth adapter)
@@ -252,4 +265,3 @@ enum PaymentStatus {
   FAILED
   REFUNDED
 }
-
