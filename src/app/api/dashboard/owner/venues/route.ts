@@ -109,6 +109,7 @@ export async function POST(req: Request) {
         description,
         amenities,
         photos,
+        approved: false
       },
     });
 

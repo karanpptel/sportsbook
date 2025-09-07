@@ -1,4 +1,4 @@
-// src/app/api/dashboard/venues/[id]/route.ts
+// src/app/api/dashboard/venues/[venueId]/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -10,16 +10,16 @@ type paramsType = {
   params: {  id: string };
 };
 
-// Helper to generate slug
-function slugify(text: string) {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w\-]+/g, "")
-    .replace(/\-\-+/g, "-");
-}
+// // Helper to generate slug
+// function slugify(text: string) {
+//   return text
+//     .toString()
+//     .toLowerCase()
+//     .trim()
+//     .replace(/\s+/g, "-")
+//     .replace(/[^\w\-]+/g, "")
+//     .replace(/\-\-+/g, "-");
+// }
 
 // Update Venue
 export async function PATCH(req: Request, { params }: paramsType) {

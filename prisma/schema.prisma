@@ -47,6 +47,8 @@ model FacilityOwner {
   phone        String?
   businessName String?
   address      String?
+  city         String?
+  state        String?
 
   //Relation 
   venues    Venue[]
@@ -72,12 +74,14 @@ model Venue {
   amenities   String[]      @default([]) // e.g., ["parking", "lights"]
   photos      String[]      @default([]) // Cloudinary URLs or public_ids
   approved    Boolean       @default(false)
-  rating      Float? // optional aggregate
+  
 
   //Relationships
 
   courts    Court[]
   reviews   Review[]
+  rating        Float     @default(0)   // average rating
+  reviewsCount  Int       @default(0)   // total number of reviews
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -199,7 +203,7 @@ model Notification {
   id        String   @id @default(cuid())
   user      User     @relation(fields: [userId], references: [id])
   userId    Int // Player or Owner
-  type      String // e.g. BOOKING_CONFIRMED, BOOKING_CANCELLED
+  type      NotificationType // e.g. BOOKING_CONFIRMED, BOOKING_CANCELLED
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -265,3 +269,11 @@ enum PaymentStatus {
   FAILED
   REFUNDED
 }
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_FAILED
+  BOOKING_REFUNDED
+  BOOKING_CANCELLED
+}
+

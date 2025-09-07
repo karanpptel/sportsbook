@@ -102,36 +102,80 @@ export async function POST(req: Request) {
 
             // Also update the booking status <-> CANCELLED
             if(payment.bookingId) {
-                await prisma.booking.update({
-                    where: {id : payment.bookingId},
-                    data: { status: "CANCELLED"  }
+                const booking =  await prisma.booking.update({
+                        where: {id : payment.bookingId},
+                        data: { status: "CANCELLED"  }
+                });
+
+                // Notify player of failed booking
+                await prisma.notification.create({
+                    data: {
+                    userId: booking.userId,
+                    type: "BOOKING_FAILED",
+                    message: `Your booking for court ID ${booking.courtId} failed due to payment issues.`,
+                    },
                 });
             }
             break;
         }
 
         
+        // case "charge.refunded": {
+        //     const charge = event.data.object as Stripe.Charge;
+
+        //     //Update payment record
+        //     const refundedPayments = await prisma.payment.update({
+        //         where: { stripeChargeId: charge.id},
+        //         data: { status: "REFUNDED" },
+        //     });
+
+
+        //     if(refundedPayments.bookingId) {
+        //         const booking = await prisma.booking.update({
+        //             where: { id: refundedPayments.bookingId},
+        //             data: { status: "CANCELLED" },
+        //         });
+
+        //         // Notify player of refund
+        //         await prisma.notification.create({
+        //             data: {
+        //             userId: booking.userId,
+        //             type: "BOOKING_REFUNDED",
+        //             message: `Your booking for court ID ${booking.courtId} has been refunded.`,
+        //             },
+        //         });
+        //     }
+        //     break;
+        // }
         case "charge.refunded": {
             const charge = event.data.object as Stripe.Charge;
 
-            //Update payment record
-            const updatePayments = await prisma.payment.updateMany({
-                where: { stripeChargeId: charge.id},
-                data: { status: "REFUNDED" },
+            // Find the payment record by stripeChargeId
+            const payment = await prisma.payment.findFirst({
+                where: { stripeChargeId: charge.id },
             });
 
-
-            // If refund is tied to booking, mark it as CANCELLED
-            if(updatePayments.count > 0) {
-                const refundedPayment = await prisma.payment.findFirst({
-                    where : { stripeChargeId: charge.id},
+            if (payment) {
+                // Update the payment record
+                await prisma.payment.update({
+                where: { id: payment.id },
+                data: { status: "REFUNDED" },
                 });
 
-                if(refundedPayment?.bookingId) {
-                    await prisma.booking.update({
-                        where: {id : refundedPayment.bookingId},
-                        data: { status: "CANCELLED"  }
-                    });
+                if (payment.bookingId) {
+                const booking = await prisma.booking.update({
+                    where: { id: payment.bookingId },
+                    data: { status: "CANCELLED" },
+                });
+
+                // Notify player of refund
+                await prisma.notification.create({
+                    data: {
+                    userId: booking.userId,
+                    type: "BOOKING_REFUNDED",
+                    message: `Your booking for court ID ${booking.courtId} has been refunded.`,
+                    },
+                });
                 }
             }
             break;
@@ -141,10 +185,12 @@ export async function POST(req: Request) {
             console.log(`Unhandled event type: ${event.type}`);
         }
 
-        return NextResponse.json({ received: true }, { status: 200 });
+        
             
 
     }
+     // ✅ Always return a response outside the switch
+    return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
     console.error("❌ Error processing webhook:", error);
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });

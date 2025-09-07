@@ -109,7 +109,7 @@ export default function VerifyOtpPage() {
       {/* Left Visual */}
       <div className="hidden md:flex items-center justify-center bg-muted/50 p-10">
         <Image
-          src="/otp-image.jpg"
+          src="/otp-page.jpg"
           alt="Verify OTP"
           width={600}
           height={600}
