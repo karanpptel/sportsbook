@@ -109,11 +109,24 @@ model Court {
 
   //Relationships
   bookings  Booking[]
+  slots     Slot[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
   @@index([sport])
 }
+
+model Slot {
+  id        Int      @id @default(autoincrement())
+  court     Court    @relation(fields: [courtId], references: [id])
+  courtId   Int
+  startTime DateTime
+  endTime   DateTime
+  price     Int
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
 
 model Booking {
   id Int @id @default(autoincrement())

@@ -3,6 +3,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
+
 import {
   Card,
   CardContent,
@@ -446,6 +448,14 @@ export default function VenueListPage({ venues }: Props) {
 
                 {/* Action Buttons */}
                 <CardFooter className="flex items-center justify-between gap-2 pt-4 border-t border-slate-100">
+                  <Link href={`/owner/venues/${venue.id}/courts`} className="flex-1">
+                    <Button size="sm" className="w-full">
+                      <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Manage Courts
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     size="sm"
@@ -453,7 +463,7 @@ export default function VenueListPage({ venues }: Props) {
                       setSelectedVenue(venue);
                       setActiveIndex(0);
                     }}
-                    className="flex-1 rounded-lg border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
+                    className="rounded-lg border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition-all duration-200"
                   >
                     <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -482,6 +492,7 @@ export default function VenueListPage({ venues }: Props) {
                     </svg>
                   </Button>
                 </CardFooter>
++
               </Card>
             ))}
           </div>

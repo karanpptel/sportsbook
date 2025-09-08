@@ -1,4 +1,4 @@
-// src/app/api/dashboard/owner/venues/[id]/courts/route.ts
+// src/app/api/dashboard/owner/venues/[venueId]/courts/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
