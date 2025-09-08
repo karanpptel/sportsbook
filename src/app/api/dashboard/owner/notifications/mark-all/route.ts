@@ -1,3 +1,4 @@
+// src/app/api/dashboard/owner/notifications/mark-all/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

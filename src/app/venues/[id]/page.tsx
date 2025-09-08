@@ -1,4 +1,4 @@
- // File: src/app/venues/[id]/page.tsx      THISPAGE IS ALSO UNDER MAINTAINANCE OR NEED FOR UPDATATION.
+// File: src/app/venues/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -34,6 +34,15 @@ export default function VenueDetailsPage() {
   if (loading) return <div className="p-10 text-center">Loading venue...</div>;
   if (!venue) return <div className="p-10 text-center">Venue not found</div>;
 
+  // Average rating calculation
+  const avgRating =
+    venue.reviews?.length > 0
+      ? (
+          venue.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
+          venue.reviews.length
+        ).toFixed(1)
+      : null;
+
   return (
     <main className="px-6 py-10 max-w-7xl mx-auto">
       {/* Header */}
@@ -46,12 +55,7 @@ export default function VenueDetailsPage() {
           </p>
           <p className="flex items-center mt-1 text-yellow-500">
             <Star className="h-4 w-4 mr-1" />{" "}
-            {venue.reviews?.length > 0
-              ? `${(
-                  venue.reviews.reduce((sum: number, r: any) => sum + r.rating, 0) /
-                  venue.reviews.length
-                ).toFixed(1)} (${venue.reviews.length})`
-              : "No ratings yet"}
+            {avgRating ? `${avgRating} (${venue.reviews.length})` : "No ratings yet"}
           </p>
         </div>
         <Button size="lg" className="self-start bg-green-600 hover:bg-green-700">
@@ -61,11 +65,11 @@ export default function VenueDetailsPage() {
 
       <Separator className="my-6" />
 
-      {/* Image Carousel */}
+      {/* Image Gallery */}
       <div className="relative w-full h-96 bg-gray-100 rounded-xl overflow-hidden">
-        {venue.images && venue.images.length > 0 ? (
+        {venue.photos && venue.photos.length > 0 ? (
           <Image
-            src={venue.images[0]} // later we can add carousel
+            src={venue.photos[0]} // later extend to carousel
             alt={venue.name}
             fill
             className="object-cover"
@@ -77,7 +81,7 @@ export default function VenueDetailsPage() {
         )}
       </div>
 
-      {/* Details Right Side */}
+      {/* Main Details */}
       <div className="grid md:grid-cols-3 gap-8 mt-10">
         <div className="md:col-span-2 space-y-10">
           {/* Sports Available */}
@@ -102,16 +106,14 @@ export default function VenueDetailsPage() {
                     <PopoverContent className="w-80">
                       <h3 className="font-semibold mb-2">{court.name} Pricing</h3>
                       <p className="text-xs text-gray-500 mb-2">
-                        Pricing is subjected to change and is controlled by venue
+                        Pricing is subject to change and controlled by the venue.
                       </p>
-                      {court.pricing?.map((p: any, idx: number) => (
-                        <div key={idx} className="flex justify-between text-sm py-1">
-                          <span>{p.dayRange}</span>
-                          <span>
-                            ₹{p.price}/hr ({p.startTime} - {p.endTime})
-                          </span>
-                        </div>
-                      ))}
+                      <div className="flex justify-between text-sm py-1">
+                        <span>Hourly</span>
+                        <span>
+                          ₹{court.pricePerHour}/hr ({court.openTime}:00 - {court.closeTime}:00)
+                        </span>
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </TabsContent>
@@ -146,7 +148,9 @@ export default function VenueDetailsPage() {
                 <Card key={idx}>
                   <CardContent className="p-4">
                     <div className="flex justify-between">
-                      <p className="font-semibold">{review.userName || "Anonymous"}</p>
+                      <p className="font-semibold">
+                        {review.user?.fullName || "Anonymous"}
+                      </p>
                       <p className="flex items-center text-yellow-500">
                         <Star className="h-4 w-4 mr-1" /> {review.rating}
                       </p>
@@ -170,7 +174,9 @@ export default function VenueDetailsPage() {
                 <Clock className="h-4 w-4 mr-2" /> Operating Hours
               </h3>
               <p className="text-sm text-gray-600">
-                {venue.openingHours || "Not specified"}
+                {venue.courts?.length > 0
+                  ? `${venue.courts[0].openTime}:00 - ${venue.courts[0].closeTime}:00`
+                  : "Not specified"}
               </p>
             </CardContent>
           </Card>

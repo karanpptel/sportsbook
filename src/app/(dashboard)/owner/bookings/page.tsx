@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-toastify";
-import { DashboardLayout } from "@/components/dashboard/layout/DashboardLayout";
+
 import { ProtectedRoutes } from "@/components/dashboard/layout/ProtectedRoute";
 
 type BookingStatusType = "PENDING" | "CONFIRMED" | "CANCELLED" | "COMPLETED";
@@ -109,7 +109,7 @@ export default function OwnerBookingsPage() {
 
   return (
     <ProtectedRoutes allowedRoles={["OWNER"]}>
-      <DashboardLayout>
+      
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Bookings</h2>
 
@@ -219,7 +219,7 @@ export default function OwnerBookingsPage() {
             </div>
           )}
         </div>
-      </DashboardLayout>
+      
     </ProtectedRoutes>
   );
 }

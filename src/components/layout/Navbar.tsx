@@ -25,15 +25,18 @@ type Role = "USER" | "OWNER" | "ADMIN" | "GUEST";
 const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
   USER: [
     { href: "/", label: "Home" },
+    { href: "/player", label: "Dashboard" },
     { href: "/venues", label: "Venues" },
     { href: "/bookings", label: "My Bookings" },
     { href: "/contact", label: "Contact" },
   ],
   OWNER: [
-    { href: "/", label: "Home" },
-    { href: "/venues/manage", label: "Manage Venues" },
-    { href: "/bookings/manage", label: "Manage Bookings" },
-    { href: "/contact", label: "Contact" },
+    //{ href: "/", label: "Home" },
+    { href: "/owner", label: "Dashboard" },
+    //{ href: "/venues/manage", label: "Manage Venues" },
+    { href: "/owner/bookings", label: "Manage Bookings" },
+    //{ href: "/contact", label: "Contact" },
+    { href: "/owner/analytics", label: "Analytics" },
   ],
   ADMIN: [
     { href: "/", label: "Home" },

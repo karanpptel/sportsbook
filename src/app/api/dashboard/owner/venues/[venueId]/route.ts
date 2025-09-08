@@ -7,7 +7,7 @@ import { generateUniqueSlug } from "@/lib/slugify";
 
 
 type paramsType = {
-  params: {  id: string };
+  params: Promise<{ venueId: string }>;
 };
 
 // // Helper to generate slug
@@ -30,7 +30,7 @@ export async function PATCH(req: Request, { params }: paramsType) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const venueId = parseInt(params.id, 10);
+    const venueId = parseInt((await params).venueId, 10);
     const body = await req.json();
 
     const { name, address, city, state, description, amenities, photos } = body;
@@ -76,13 +76,16 @@ export async function DELETE(req: Request, { params }: paramsType) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const venueId = params.id;
+    const venueId = parseInt((await params).venueId, 10);
+    if (isNaN(venueId)) {
+      return NextResponse.json({ error: "Invalid venue ID" }, { status: 400 });
+    }
 
-  // Get venue
-  const venue = await prisma.venue.findUnique({
-    where: { id: Number(venueId) },
-    select: { id: true, ownerId: true },
-  });
+    // Get venue
+    const venue = await prisma.venue.findUnique({
+      where: { id: venueId },
+      select: { id: true, ownerId: true },
+    });
 
   // Get current owner's profile
   const ownerProfile = await prisma.facilityOwner.findUnique({
@@ -95,7 +98,7 @@ export async function DELETE(req: Request, { params }: paramsType) {
 
 
    // Delete venue
-  await prisma.venue.delete({ where: { id: Number(venueId) } });
+  await prisma.venue.delete({ where: { id: venueId } });
 
 
     return NextResponse.json({ message: "Venue deleted successfully" });

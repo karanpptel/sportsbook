@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { recalcVenuePriceRange } from "@/lib/prismaHelper";
 
 type Params = { params: { venueId: string } };
 
@@ -48,11 +49,22 @@ export async function POST(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Not allowed to add courts for this venue" }, { status: 403 });
     }
 
-    const { name, sport, pricePerHour, openTime, closeTime } = body;
+    //const { name, sport, pricePerHour, openTime, closeTime } = body; //  OLD data route
 
     const court = await prisma.court.create({
-      data: { venueId, name, sport, pricePerHour, openTime, closeTime },
+      data: {
+        venueId,
+        name: body.name,
+        sport: body.sport,
+        pricePerHour: body.pricePerHour,
+        currency: body.currency || "INR",
+        openTime: body.openTime,
+        closeTime: body.closeTime,
+      },
     });
+
+    // 🔄 Update min/max prices for this venue
+    await recalcVenuePriceRange(venueId);
 
     return NextResponse.json({ court });
   } catch (err) {

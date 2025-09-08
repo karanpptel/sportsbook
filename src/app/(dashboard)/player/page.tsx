@@ -1,7 +1,7 @@
 // src/app/(dashboard)/player/page.tsx
 "use client";
 
-import { DashboardLayout } from "@/components/dashboard/layout/DashboardLayout";
+//import { DashboardLayout } from "@/components/dashboard/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Calendar, CheckCircle, Wallet } from "lucide-react";
@@ -25,7 +25,7 @@ export default function PlayerDashboardPage() {
 
   return (
   <ProtectedRoutes allowedRoles={["USER","PLAYER"]}>
-      <DashboardLayout>
+      {/* <DashboardLayout> */}
       <div className="space-y-6">
         {/* Welcome */}
         <h2 className="text-2xl font-bold text-gray-800">
@@ -76,7 +76,7 @@ export default function PlayerDashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    {/* </DashboardLayout> */}
   </ProtectedRoutes>
     
   );

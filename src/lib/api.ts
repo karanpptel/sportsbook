@@ -1,3 +1,5 @@
+//  src/lib/api.ts
+// Client-side API helper functions
 export async function markNotificationAsRead(role: "player" | "owner", id: string) {
   const res = await fetch(`/api/dashboard/${role}/notifications/${id}`, {
     method: "PATCH",

@@ -63,7 +63,7 @@ model Venue {
   owner       FacilityOwner @relation(fields: [ownerId], references: [id])
   ownerId     Int
   name        String
-  slug        String        @unique
+  slug       String        @unique
   description String?
   address     String
   city        String
@@ -74,10 +74,13 @@ model Venue {
   amenities   String[]      @default([]) // e.g., ["parking", "lights"]
   photos      String[]      @default([]) // Cloudinary URLs or public_ids
   approved    Boolean       @default(false)
+
+  // Pricing (new fields for faster filtering)
+  minPricePerHour Int?      // lowest price among courts
+  maxPricePerHour Int?      // highest price among courts
   
 
   //Relationships
-
   courts    Court[]
   reviews   Review[]
   rating        Float     @default(0)   // average rating
@@ -87,6 +90,8 @@ model Venue {
 
   @@index([city])
   @@index([approved])
+  @@index([minPricePerHour])
+  @@index([maxPricePerHour])
 }
 
 model Court {

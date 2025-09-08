@@ -20,13 +20,36 @@ export async function POST(req: Request) {
     const buffer = Buffer.from(arrayBuffer);
 
 
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!validTypes.includes(file.type)) {
+      return NextResponse.json({ error: "Invalid file type" }, { status: 400 });
+    }
+
+    // Validate file size (10MB max)
+    if (file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large" }, { status: 400 });
+    }
+
     const uploadRes = await new Promise<UploadResult>((resolve, reject) => {
           cloudinary.uploader
-            .upload_stream({ folder: "sportsbook/venues" }, (err, result) => {
-              if (err) reject(err);
-              else if (result) resolve(result);
-              else reject(new Error("Upload result is undefined"));
-            })
+            .upload_stream(
+              { 
+                folder: "sportsbook/venues",
+                transformation: [
+                  { width: 800, height: 600, crop: "fill" },
+                  { quality: "auto", fetch_format: "auto" }
+                ],
+                resource_type: "auto",
+                allowed_formats: ["jpg", "png", "jpeg"],
+                format: "jpg"
+              }, 
+              (err, result) => {
+                if (err) reject(err);
+                else if (result) resolve(result);
+                else reject(new Error("Upload result is undefined"));
+              }
+            )
             .end(buffer);
         });
 

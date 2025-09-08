@@ -1,10 +1,11 @@
-// src/app/api/dashboard/owner/courts/[courtId]/route.ts
+// src/app/api/dashboard/owner/venues/[venueId]/courts/[courtId]/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { recalcVenuePriceRange } from "@/lib/prismaHelper";
 
-type Params = { params: { courtId: string } };
+type Params = { params: { venueId: string, courtId: string } };
 
 
 // ✅ PATCH: Update a court
@@ -15,33 +16,38 @@ export async function PATCH(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const venueId = Number(params.venueId);
     const courtId = Number(params.courtId);
     const body = await req.json();
     const userId = Number(session.user.id);
 
     // Verify ownership
     const owner = await prisma.facilityOwner.findUnique({ where: { userId } });
-    const court = await prisma.court.findUnique({
+    const courtToUpdate = await prisma.court.findUnique({
       where: { id: courtId },
       include: { venue: true },
     });
 
-    if (!owner || !court || court.venue.ownerId !== owner.id) {
+    if (!owner || !courtToUpdate || courtToUpdate.venue.ownerId !== owner.id) {
       return NextResponse.json({ error: "Not allowed to update this court" }, { status: 403 });
     }
 
-    const updatedCourt = await prisma.court.update({
+    const court = await prisma.court.update({
       where: { id: courtId },
       data: {
-        name: body.name ?? undefined,
-        sport: body.sport ?? undefined,
-        pricePerHour: body.pricePerHour ?? undefined,
-        // openTime: body.openTime ?? undefined,
-        // closeTime: body.closeTime ?? undefined
+        name: body.name,
+        sport: body.sport,
+        pricePerHour: body.pricePerHour,
+        currency: body.currency,
+        openTime: body.openTime,
+        closeTime: body.closeTime,
       },
     });
 
-    return NextResponse.json({ court: updatedCourt });
+    // 🔄 Update min/max prices
+    await recalcVenuePriceRange(venueId);
+
+    return NextResponse.json({ court });
   } catch (err) {
     console.error("PATCH Court Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -56,23 +62,27 @@ export async function DELETE(req: Request, { params }: Params) {
     if (!session || session.user?.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
+    
+    const venueId = Number(params.venueId);
     const courtId = Number(params.courtId);
     const userId = Number(session.user.id);
 
     const owner = await prisma.facilityOwner.findUnique({ where: { userId } });
-    const court = await prisma.court.findUnique({
+    const courtToDelete = await prisma.court.findUnique({
       where: { id: courtId },
       include: { venue: true },
     });
 
-    if (!owner || !court || court.venue.ownerId !== owner.id) {
+    if (!owner || !courtToDelete || courtToDelete.venue.ownerId !== owner.id) {
       return NextResponse.json({ error: "Not allowed to delete this court" }, { status: 403 });
     }
 
     await prisma.court.delete({ where: { id: courtId } });
 
-    return NextResponse.json({ message: "Court deleted successfully" });
+    // 🔄 Update min/max prices
+    await recalcVenuePriceRange(venueId);
+
+    return NextResponse.json({ message: "Court deleted successfully" }, { status: 200 });
   } catch (err) {
     console.error("DELETE Court Error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
