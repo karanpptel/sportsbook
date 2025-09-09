@@ -15,6 +15,8 @@ interface Venue {
 }
 
 export default function VenueDetailHero({ venue }: { venue: Venue }) {
+
+  
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="relative">

@@ -6,63 +6,19 @@ import VenueAmenities from "@/components/player/venue-detail/VenueAmenities";
 import CourtList from "@/components/player/venue-detail/CourtList";
 import VenueReviews from "@/components/player/venue-detail/VenueReviews";
 
-// NOTE: Replace fetchVenue mock with Prisma/DB call when ready
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000";
+
 async function fetchVenue(venueId: string) {
-  // fallback mock
-  return {
-    id: Number(venueId || 1),
-    name: "SRK Badminton Arena",
-    slug: "srk-badminton-arena",
-    city: "Ahmedabad",
-    address: "Sector 12, Sport Complex",
-    rating: 4.7,
-    reviewsCount: 128,
-    photos: [
-      "/images/venues/srk-hero.jpg",
-      "/images/venues/srk-1.jpg",
-      "/images/venues/srk-2.jpg",
-      "/images/venues/srk-3.jpg",
-    ],
-    amenities: ["parking", "lights", "indoor", "ball_rental"],
-    description:
-      "Premium indoor courts with wooden flooring, pro-level lighting and equipment rental. Perfect for competitive and casual play.",
-    courts: [
-      {
-        id: 1,
-        name: "Court A",
-        sport: "Badminton",
-        pricePerHour: 400,
-        currency: "INR",
-        openTime: 6,
-        closeTime: 23,
-        slotsAvailable: 8,
-      },
-      {
-        id: 2,
-        name: "Court B",
-        sport: "Badminton",
-        pricePerHour: 350,
-        currency: "INR",
-        openTime: 6,
-        closeTime: 23,
-        slotsAvailable: 6,
-      },
-      {
-        id: 3,
-        name: "Court C",
-        sport: "Table Tennis",
-        pricePerHour: 200,
-        currency: "INR",
-        openTime: 8,
-        closeTime: 21,
-        slotsAvailable: 10,
-      },
-    ],
-    reviews: [
-      { id: 1, user: "Rahul", rating: 5, comment: "Great lighting!" },
-      { id: 2, user: "Meera", rating: 4, comment: "Courts well maintained." },
-    ],
-  };
+  const res = await fetch(`${BASE_URL}/api/dashboard/player/venue/${venueId}`);
+  if (!res.ok) throw new Error("Venue not found");
+  const data = await res.json();
+  return data.venue;
+}
+
+async function fetchReviews(venueId: string) {
+  const res = await fetch(`${BASE_URL}/api/dashboard/player/venue/${venueId}/review`);
+  if (!res.ok) return [];
+  return await res.json();
 }
 
 interface PageProps {
@@ -72,6 +28,7 @@ interface PageProps {
 export default async function VenuePage({ params }: PageProps) {
   const { venueId } = params;
   const venue = await fetchVenue(venueId);
+  const reviews = await fetchReviews(venueId);
 
   return (
     <main className="container mx-auto px-4 lg:px-8 py-8">
@@ -97,7 +54,7 @@ export default async function VenuePage({ params }: PageProps) {
           </div>
 
           <div className="mt-6">
-            <VenueReviews reviews={venue.reviews} rating={venue.rating} />
+            <VenueReviews reviews={reviews} rating={venue.rating} />
           </div>
         </section>
 
