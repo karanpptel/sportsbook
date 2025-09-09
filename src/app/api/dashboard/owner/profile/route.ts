@@ -18,7 +18,7 @@ export async function GET() {
     const ownerProfile = await prisma.facilityOwner.findUnique({
       where: { userId },
       include: {
-        user: { select: { id: true, fullName: true, email: true } },
+        user: { select: { id: true, fullName: true, email: true, avatarUrl: true } },
         venues: { select: { id: true, name: true, city: true, state: true } },
       },
     });

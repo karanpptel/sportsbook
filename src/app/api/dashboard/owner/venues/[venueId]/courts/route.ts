@@ -5,7 +5,7 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { recalcVenuePriceRange } from "@/lib/prismaHelper";
 
-type Params = { params: { venueId: string } };
+type Params = { params: Promise<{ venueId: string }> };
 
 // ✅ GET: List courts for a venue
 export async function GET(req: Request, { params }: Params) {
@@ -15,9 +15,10 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const venueId = Number(params.venueId);
+    const { venueId } = await params;
+    const venueIdNum = parseInt(venueId, 10);
     const courts = await prisma.court.findMany({
-      where: { venueId },
+      where: { venueId: venueIdNum },
       orderBy: { createdAt: "desc" },
     });
 
@@ -38,13 +39,17 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const userId = Number(session.user.id);
-    const venueId = Number(params.venueId);
+    const { venueId } = await params;
+    const venueIdNum = parseInt(venueId, 10);
+    if (isNaN(venueIdNum)) {
+      return NextResponse.json({ error: "Invalid venue ID" }, { status: 400 });
+    }
     const body = await req.json();
 
     const owner = await prisma.facilityOwner.findUnique({ where: { userId } });
     if (!owner) return NextResponse.json({ error: "Owner profile not found" }, { status: 404 });
 
-    const venue = await prisma.venue.findUnique({ where: { id: venueId } });
+    const venue = await prisma.venue.findUnique({ where: { id: venueIdNum } });
     if (!venue || venue.ownerId !== owner.id) {
       return NextResponse.json({ error: "Not allowed to add courts for this venue" }, { status: 403 });
     }
@@ -53,7 +58,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const court = await prisma.court.create({
       data: {
-        venueId,
+        venueId: venueIdNum,
         name: body.name,
         sport: body.sport,
         pricePerHour: body.pricePerHour,
@@ -64,7 +69,7 @@ export async function POST(req: Request, { params }: Params) {
     });
 
     // 🔄 Update min/max prices for this venue
-    await recalcVenuePriceRange(venueId);
+    await recalcVenuePriceRange(venueIdNum);
 
     return NextResponse.json({ court });
   } catch (err) {

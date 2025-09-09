@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,8 +25,15 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "react-toastify";
 
-export function SlotManager({ courtId }: { courtId: string }) {
+type SlotManagerProps = { courtId: string; venueId: string };
+
+export function SlotManager({ courtId, venueId }: SlotManagerProps) {
+  const router = useRouter();
   const [slots, setSlots] = useState<any[]>([]);
+
+  const handleBack = () => {
+    router.back();
+  };
 
   // Generator state
   const [start, setStart] = useState("07:00");
@@ -54,11 +62,18 @@ export function SlotManager({ courtId }: { courtId: string }) {
     try {
       setLoadingSlots(true);
       const res = await fetch(`/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
       const data = await res.json();
+      console.log("Fetched slots data:", data); // Debug log
       setSlots(Array.isArray(data) ? data : []);
     } catch (e) {
-      console.error(e);
+      console.error("Error fetching slots:", e);
       toast.error("Failed to fetch slots");
+      setSlots([]); // Ensure slots is reset on error
     } finally {
       setLoadingSlots(false);
     }
@@ -79,18 +94,31 @@ export function SlotManager({ courtId }: { courtId: string }) {
     }
     try {
       setGenerating(true);
-      const res = await fetch(`/api/dashboard/owner/courts/${courtId}/slots`, {
+      console.log("Generating slots with:", { startTime: start, endTime: end, duration, price });
+      
+      const res = await fetch(`/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ start, end, duration, price }),
+        body: JSON.stringify({ startTime: start, endTime: end, duration, price }),
       });
 
-      if (!res.ok) throw new Error("Failed to generate slots");
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("API Error:", errorData);
+        throw new Error(`Failed to generate slots: ${errorData.error || res.statusText}`);
+      }
 
+      const result = await res.json();
+      //console.log("Slots generation result:", result);
+      
       toast.success("Time slots were generated successfully.");
-      fetchSlots();
+      
+      // Add a small delay before fetching to ensure database consistency
+      setTimeout(() => {
+        fetchSlots();
+      }, 100);
     } catch (err) {
-      console.error(err);
+      console.error("Error generating slots:", err);
       toast.error("Could not generate slots");
     } finally {
       setGenerating(false);
@@ -101,7 +129,7 @@ export function SlotManager({ courtId }: { courtId: string }) {
     try {
       setDeletingId(id);
       const res = await fetch(
-        `/api/dashboard/owner/courts/${courtId}/slots/${id}`,
+        `/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots/${id}`,
         {
           method: "DELETE",
         }
@@ -124,7 +152,7 @@ export function SlotManager({ courtId }: { courtId: string }) {
     try {
       setSavingEdit(true);
       const res = await fetch(
-        `/api/dashboard/owner/courts/${courtId}/slots/${editingSlot.id}`,
+        `/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots/${editingSlot.id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -153,11 +181,20 @@ export function SlotManager({ courtId }: { courtId: string }) {
   useEffect(() => {
     fetchSlots();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courtId]);
+  }, [courtId, venueId]);
 
   return (
     <div className="space-y-6">
       {/* Slot generator */}
+      <div className="mb-4">
+        <Button
+          variant="outline"
+          onClick={handleBack}
+          className="mb-4"
+        >
+          ← Back
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Generate Time Slots</CardTitle>
@@ -342,7 +379,7 @@ export function SlotManager({ courtId }: { courtId: string }) {
                             <div className="flex items-center gap-2">
                               <Switch
                                 checked={editingSlot.isBooked}
-                                onCheckedChange={(checked) =>
+                                onCheckedChange={(checked: boolean) =>
                                   setEditingSlot({
                                     ...editingSlot,
                                     isBooked: checked,

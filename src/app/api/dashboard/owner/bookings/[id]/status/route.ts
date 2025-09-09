@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+import { stripe } from "@/lib/stripe";
 
 type Params = {
   params: { id: string };
@@ -28,6 +29,7 @@ export async function PATCH(req: Request, { params }: Params) {
     const body = await req.json();
     const { status } = body; // should be one of your enum values: PENDING, APPROVED, REJECTED, CANCELLED
 
+
      if (!["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
     }
@@ -35,7 +37,7 @@ export async function PATCH(req: Request, { params }: Params) {
     // Get booking first
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { court: { include: { venue: true } } },
+      include: { payment: true, court: { include: { venue: true } } },
     });
 
     if (!booking) {
@@ -63,6 +65,27 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
 
+
+    //not required but good to have  <=> if needed than continue with this otherwise ignore---------->
+    // Refund logic only if status → CANCELLED and payment exists
+    if (status === "CANCELLED" && booking.payment && booking.payment.status === "SUCCEEDED") {
+      if (!booking.payment.stripePaymentIntentId) {
+        return NextResponse.json({ error: "Missing paymentIntentId" }, { status: 400 });
+      }
+
+      // Refund with Stripe
+      const refund = await stripe.refunds.create({
+        payment_intent: booking.payment.stripePaymentIntentId,
+      });
+
+      // // Update Payment record
+      // await prisma.payment.update({
+      //   where: { id: booking.payment.id },
+      //   data: { status: "REFUNDED", refundId: refund.id },
+      // });
+    }
+    //------------------------------------------------------------------------------------------->
+
     // Update booking only if it belongs to this owner’s venue
     const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
@@ -70,8 +93,11 @@ export async function PATCH(req: Request, { params }: Params) {
       include: {
         user: { select: { id: true, fullName: true, email: true } },
         court: { select: { id: true, name: true, sport: true, venueId: true } },
+        payment: true,
       },
     });
+
+  
 
     // ✅ Create notification for the player
     let notifType: "BOOKING_CONFIRMED" | "BOOKING_CANCELLED" | "BOOKING_FAILED" | "BOOKING_REFUNDED" | null =

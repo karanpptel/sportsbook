@@ -1,4 +1,4 @@
-// 
+//  src/app/(dashboard)/owner/venues/[venueId]/courts/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,13 +19,18 @@ export default function CourtsPage() {
   const { venueId } = useParams();
   const [courts, setCourts] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function fetchCourts() {
+  setLoading(true);
+  try {
     const res = await fetch(`/api/dashboard/owner/venues/${venueId}/courts`);
     const data = await res.json();
-    setCourts(data);
+    setCourts(data?.courts ?? []);
+  } finally {
+    setLoading(false);
   }
-
+}
   useEffect(() => {
     fetchCourts();
   }, [venueId]);
@@ -42,12 +47,21 @@ export default function CourtsPage() {
             <DialogHeader>
               <DialogTitle>Add New Court</DialogTitle>
             </DialogHeader>
-            <CourtForm venueId={venueId as string} onSuccess={() => { setOpen(false); fetchCourts(); }} />
+
+            {/** Add Court Form */}
+            <CourtForm 
+              venueId={venueId as string} 
+              onSuccess={() => { setOpen(false); fetchCourts(); }} 
+            />
           </DialogContent>
         </Dialog>
       </div>
-
-      <CourtList venueId={venueId as string} courts={courts} refresh={fetchCourts} />
+      {/** Courts Table List */}
+      {loading ? (
+        <p className="text-muted-foreground">Loading courts...</p>
+      ) : (
+        <CourtList venueId={venueId as string} courts={courts} refresh={fetchCourts} />
+      )}
     </div>
   );
 }

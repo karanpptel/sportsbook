@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +33,12 @@ export function CourtList({
   courts?: any[];
   refresh: () => void;
 }) {
+  const router = useRouter();
   const [editingCourt, setEditingCourt] = useState<any | null>(null);
+  
+  const handleBack = () => {
+    router.back();
+  };
   const [deletingCourt, setDeletingCourt] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -113,6 +119,15 @@ export function CourtList({
 
   return (
     <>
+      <div className="mb-4">
+        <Button
+          variant="outline"
+          onClick={handleBack}
+          className="mb-4"
+        >
+          ← Back
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>

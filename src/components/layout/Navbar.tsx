@@ -24,10 +24,10 @@ type Role = "USER" | "OWNER" | "ADMIN" | "GUEST";
 // Role-based navlinks
 const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
   USER: [
-    { href: "/", label: "Home" },
+    // { href: "/", label: "Home" },
     { href: "/player", label: "Dashboard" },
-    { href: "/venues", label: "Venues" },
-    { href: "/bookings", label: "My Bookings" },
+    { href: "/player/venues", label: "Venues" },
+    { href: "/player/bookings", label: "My Bookings" },
     { href: "/contact", label: "Contact" },
   ],
   OWNER: [
@@ -37,6 +37,7 @@ const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
     { href: "/owner/bookings", label: "Manage Bookings" },
     //{ href: "/contact", label: "Contact" },
     { href: "/owner/analytics", label: "Analytics" },
+    { href: "/owner/settings", label: "Settings" },
   ],
   ADMIN: [
     { href: "/", label: "Home" },
@@ -124,12 +125,12 @@ export default function Navbar() {
                 </DropdownMenuItem>
                 {role === "USER" && (
                   <DropdownMenuItem asChild>
-                    <Link href="/bookings">My Bookings</Link>
+                    <Link href="/player/bookings">My Bookings</Link>
                   </DropdownMenuItem>
                 )}
                 {role === "OWNER" && (
                   <DropdownMenuItem asChild>
-                    <Link href="/venues/manage">Manage Venues</Link>
+                    <Link href="/owner/venues">Manage Venues</Link>
                   </DropdownMenuItem>
                 )}
                 {role === "ADMIN" && (
