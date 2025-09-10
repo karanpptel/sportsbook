@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Image from "next/image";
@@ -22,7 +22,7 @@ import {
   ResetPasswordFormValues,
 } from "@/lib/validations/auth";
 
-export default function ResetPassword() {
+function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -143,5 +143,34 @@ export default function ResetPassword() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ResetPasswordLoading() {
+  return (
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2">
+      <div className="hidden md:flex items-center justify-center bg-muted/40">
+        <div className="w-[600px] h-[600px] bg-muted animate-pulse rounded-xl" />
+      </div>
+      <div className="flex items-center justify-center p-6">
+        <div className="w-full max-w-md rounded-2xl border bg-background/95 p-6 shadow-sm backdrop-blur">
+          <div className="space-y-4">
+            <div className="h-8 w-3/4 bg-muted animate-pulse rounded" />
+            <div className="h-4 w-full bg-muted animate-pulse rounded" />
+            <div className="h-10 w-full bg-muted animate-pulse rounded" />
+            <div className="h-10 w-full bg-muted animate-pulse rounded" />
+            <div className="h-10 w-full bg-muted animate-pulse rounded" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<ResetPasswordLoading />}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }
