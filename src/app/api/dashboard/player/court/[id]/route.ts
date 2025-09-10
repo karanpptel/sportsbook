@@ -1,3 +1,5 @@
+// src/app/api/dashboard/player/court/[id]/route.ts
+
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -5,14 +7,20 @@ type Params = {
     params: { id: string };
 };
 
-export async function GET(req: Request, { params }: Params) {
+import { NextRequest } from "next/server";
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
 
     try {
         const { id } = params;
         const courtId = parseInt(id, 10);
 
         //parse query params for date (YYYY-MM-DD)
-        const url = new URL(req.url);
+        const url = new URL(request.url);
         const date = url.searchParams.get("date");
 
         if(!date){

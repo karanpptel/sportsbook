@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 
 
 
+
 export type Venue = {
   id: number;
   name: string;
@@ -77,6 +78,7 @@ export default function PlayerVenuesPage() {
   const [sport, setSport] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"featured" | "price_asc" | "price_desc" | "rating">("featured");
   const [loading, setLoading] = useState(false);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
 
   async function loadVenues() {
     setLoading(true);
@@ -100,28 +102,37 @@ export default function PlayerVenuesPage() {
   }, []);
 
   const filtered = useMemo(() => {
-    if (!venues) return [];
-    return venues
-      .filter((v) => {
-        const q = query.trim().toLowerCase();
-        const matchesQuery =
-          !q ||
-          v.name.toLowerCase().includes(q) ||
-          v.city?.toLowerCase().includes(q) ||
-          v.address?.toLowerCase().includes(q);
-        const matchesCity = !city || v.city === city;
-        // NOTE: filtering by sport requires courts info; simple heuristic: check name/amenities
-        const matchesSport = !sport || v.name.toLowerCase().includes(sport.toLowerCase()) || (v.amenities || []).some(a => a.toLowerCase().includes(sport.toLowerCase()));
-        return matchesQuery && matchesCity && matchesSport && v.approved;
-      })
-      .sort((a, b) => {
-        if (sortBy === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
-        if (sortBy === "price_asc") return (a.minPricePerHour ?? 0) - (b.minPricePerHour ?? 0);
-        if (sortBy === "price_desc") return (b.maxPricePerHour ?? 0) - (a.maxPricePerHour ?? 0);
-        // featured / default: mix by approval & rating
-        return (b.rating ?? 0) - (a.rating ?? 0);
-      });
-  }, [venues, query, city, sport, sortBy]);
+  if (!venues) return [];
+  return venues
+    .filter((v) => {
+      const q = query.trim().toLowerCase();
+      const matchesQuery =
+        !q ||
+        v.name.toLowerCase().includes(q) ||
+        v.city?.toLowerCase().includes(q) ||
+        v.address?.toLowerCase().includes(q);
+
+      const matchesCity = !city || v.city === city;
+
+      const matchesSport =
+        !sport ||
+        (v as any).courts?.some((c: any) =>
+          c.sport.toLowerCase() === sport.toLowerCase()
+        );
+
+      const matchesAmenities =
+        selectedAmenities.length === 0 ||
+        selectedAmenities.every((a) => v.amenities?.includes(a));
+
+      return matchesQuery && matchesCity && matchesSport && matchesAmenities && v.approved;
+    })
+    .sort((a, b) => {
+      if (sortBy === "rating") return (b.rating ?? 0) - (a.rating ?? 0);
+      if (sortBy === "price_asc") return (a.minPricePerHour ?? 0) - (b.minPricePerHour ?? 0);
+      if (sortBy === "price_desc") return (b.maxPricePerHour ?? 0) - (a.maxPricePerHour ?? 0);
+      return (b.rating ?? 0) - (a.rating ?? 0);
+    });
+}, [venues, query, city, sport, sortBy, selectedAmenities]);
 
   const cities = useMemo(() => {
     if (!venues) return [];
@@ -165,7 +176,10 @@ export default function PlayerVenuesPage() {
               onSportChange={setSport}
               sortBy={sortBy}
               onSortChange={(s) => setSortBy(s)}
+              selectedAmenities={selectedAmenities}
+              onAmenitiesChange={setSelectedAmenities}
             />
+
 
             <Card className="hidden lg:block sticky top-24">
               <CardContent>

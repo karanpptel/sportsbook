@@ -1,13 +1,16 @@
+// src/app/api/dashboard/player/bookings/[id]/cancel/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
-type Params = {
-  params: { id: string };
-};
+import { NextRequest } from "next/server";
 
-export async function PATCH(req: Request, { params }: Params) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+    const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== "USER") {

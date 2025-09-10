@@ -4,7 +4,13 @@ import { prisma } from "@/lib/prisma";
 type Params = { params: { id: string } };
 
 // ✅ GET - fetch all reviews for a venue
-export async function GET(req: Request, { params }: Params) {
+import { NextRequest } from "next/server";
+
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  const params = await context.params;
   try {
     const venueId = Number(params.id);
     if (!venueId) {
@@ -12,7 +18,7 @@ export async function GET(req: Request, { params }: Params) {
     }
   
     const reviews = await prisma.review.findMany({
-      where: { venueId },
+      where: { venueId, comment: { not: "" } },
       include: {
         user: {
           select: {

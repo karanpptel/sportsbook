@@ -35,14 +35,16 @@ export async function GET() {
 }
 
 // ✅ UPDATE player profile
-export async function PUT(req: Request) {
+import { NextRequest } from "next/server";
+
+export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user.role !== "PLAYER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = await request.json();
     const { fullName, avatar } = body;
 
     const updatedPlayer = await prisma.user.update({

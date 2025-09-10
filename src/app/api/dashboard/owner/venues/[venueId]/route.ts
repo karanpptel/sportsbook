@@ -22,7 +22,9 @@ type paramsType = {
 // }
 
 // Update Venue
-export async function PATCH(req: Request, { params }: paramsType) {
+import { NextRequest } from "next/server";
+
+export async function PATCH(request: NextRequest, { params }: paramsType) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -31,7 +33,7 @@ export async function PATCH(req: Request, { params }: paramsType) {
     }
 
     const venueId = parseInt((await params).venueId, 10);
-    const body = await req.json();
+    const body = await request.json();
 
     const { name, address, city, state, description, amenities, photos } = body;
 
@@ -68,7 +70,7 @@ export async function PATCH(req: Request, { params }: paramsType) {
 
 
 // Delete venue
-export async function DELETE(req: Request, { params }: paramsType) {
+export async function DELETE(request: NextRequest, { params }: paramsType) {
   try {
     const session = await getServerSession(authOptions);
 

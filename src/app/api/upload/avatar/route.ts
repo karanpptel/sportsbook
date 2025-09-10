@@ -5,9 +5,11 @@ interface UploadResult {
   secure_url: string;
 }
 
-export async function POST(req: Request) {
+import { NextRequest } from "next/server";
+
+export async function POST(request: NextRequest) {
   try {
-    const formData = await req.formData();
+    const formData = await request.formData();
     const file = formData.get("file") as File;
 
     if (!file) {

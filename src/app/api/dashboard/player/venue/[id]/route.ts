@@ -2,12 +2,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-type Params = {
-  params: { id: string };
-  searchParams?: { courtName?: string };
-};
+import { NextRequest } from "next/server";
 
-export async function GET(req: Request, { params, searchParams }: Params) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }>, searchParams?: { courtName?: string } }
+) {
+    const params = await context.params;
+    const searchParams = context.searchParams;
   try {
     const { id } = params;
     const courtFilter = searchParams?.courtName;

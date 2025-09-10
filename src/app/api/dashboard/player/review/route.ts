@@ -4,6 +4,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 // ✅ GET - fetch logged-in player's reviews
+import { NextRequest } from "next/server";
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -21,7 +23,7 @@ export async function GET() {
 
 
 // POST - create a review for venue
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
     
   try {
     const session = await getServerSession(authOptions);
@@ -29,7 +31,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
   
-    const body = await req.json();
+    const body = await request.json();
     const { venueId, rating, comment } = body;
   
     if (!venueId || !rating) {

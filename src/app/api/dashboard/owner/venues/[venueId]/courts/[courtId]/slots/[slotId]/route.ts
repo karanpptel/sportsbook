@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-type paramsType = {
-    params: {slotId: string, courtId: string}
-}
+import { NextRequest } from "next/server";
 
 // ✅ PATCH: Update a slot
-export async function PATCH(req: Request, { params }: paramsType) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string; courtId: string; slotId: string }> }
+) {
+    const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== "OWNER") {
@@ -17,7 +19,7 @@ export async function PATCH(req: Request, { params }: paramsType) {
 
     const courtId = Number(params.courtId);
     const slotId = Number(params.slotId);
-    const body = await req.json();
+    const body = await request.json();
     const userId = Number(session.user.id);
 
     // Verify ownership
@@ -48,7 +50,11 @@ export async function PATCH(req: Request, { params }: paramsType) {
   }
 }
 
-export async function DELETE(req: Request, {params}: paramsType ) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string; courtId: string; slotId: string }> }
+) {
+    const params = await context.params;
     try {
         const session = await getServerSession(authOptions);
         if (!session || session.user?.role !== "OWNER") {

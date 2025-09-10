@@ -6,13 +6,19 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 type Params = { params: { id: string } };
 
 // ✅ PATCH - update review
-export async function PATCH(req: Request, { params }: Params) {
+import { NextRequest } from "next/server";
+
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+    const params = await context.params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
+  const body = await request.json();
   const { rating, comment } = body;
 
   const review = await prisma.review.findUnique({
@@ -32,7 +38,11 @@ export async function PATCH(req: Request, { params }: Params) {
 }
 
 // ✅ DELETE - delete review with recalculating avarage review 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+    const params = await context.params;
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

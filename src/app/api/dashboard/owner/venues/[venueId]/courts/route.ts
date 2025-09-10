@@ -5,17 +5,23 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { recalcVenuePriceRange } from "@/lib/prismaHelper";
 
-type Params = { params: Promise<{ venueId: string }> };
+import { NextRequest } from "next/server";
+
+
 
 // ✅ GET: List courts for a venue
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string }> }
+) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== "OWNER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { venueId } = await params;
+    const { venueId } = params;
     const venueIdNum = parseInt(venueId, 10);
     const courts = await prisma.court.findMany({
       where: { venueId: venueIdNum },
@@ -31,7 +37,11 @@ export async function GET(req: Request, { params }: Params) {
 
 
 // ✅ POST: Add a new court to a venue
-export async function POST(req: Request, { params }: Params) {
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string }> }
+) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== "OWNER") {
@@ -44,7 +54,7 @@ export async function POST(req: Request, { params }: Params) {
     if (isNaN(venueIdNum)) {
       return NextResponse.json({ error: "Invalid venue ID" }, { status: 400 });
     }
-    const body = await req.json();
+    const body = await request.json();
 
     const owner = await prisma.facilityOwner.findUnique({ where: { userId } });
     if (!owner) return NextResponse.json({ error: "Owner profile not found" }, { status: 404 });

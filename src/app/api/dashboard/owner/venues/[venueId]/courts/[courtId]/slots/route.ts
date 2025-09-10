@@ -1,25 +1,33 @@
 //  src/app/api/dashboard/owner/venues/[venueId]/courts/[courtId]/slots/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
-import moment from "moment";
 
-
-type Params = { params: Promise<{ venueId: string, courtId: string }> };
-
-// GET slots for a court
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string; courtId: string }> }
+) {
+    const params = await context.params;
   try {
-      const { venueId, courtId } = await params;
-      const venueIdNum = parseInt(venueId, 10);
-      const courtIdNum = parseInt(courtId, 10);
+    const session = await getServerSession(authOptions);
+    
+    if (!session || (session.user?.role !== "OWNER" && session.user?.role !== "ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    // First verify if the court exists
+    const venueId = parseInt(params.venueId, 10);
+    const courtId = parseInt(params.courtId, 10);
+
+    if (isNaN(venueId) || isNaN(courtId)) {
+      return NextResponse.json({ error: "Invalid venue or court ID" }, { status: 400 });
+    }
+
+    // First verify if the court exists and belongs to the venue
     const court = await prisma.court.findUnique({
       where: {
-        id: courtIdNum,
-        venueId: venueIdNum,
+        id: courtId,
+        venueId: venueId,
       },
     });
 
@@ -27,82 +35,191 @@ export async function GET(req: Request, { params }: Params) {
       return NextResponse.json({ error: "Court not found" }, { status: 404 });
     }
 
+    // Get slots for the court
     const slots = await prisma.slot.findMany({
       where: {
-        courtId: courtIdNum,
+        courtId: courtId,
       },
-      orderBy: { startTime: "asc" },
+      orderBy: {
+        startTime: "asc",
+      },
     });
 
-    // Return empty array if no slots found - this is a valid state
     return NextResponse.json(slots);
-   
   } catch (error) {
     console.error("Error fetching slots:", error);
-    return NextResponse.json({ error: "Failed to fetch slots" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch slots" },
+      { status: 500 }
+    );
   }
 }
 
-//Genrate slots for a court
-export async function POST(req: Request, { params }: Params) {
+// export async function POST(req: NextRequest, { params }: Params) {
+//   try {
+//     const session = await getServerSession(authOptions);
+    
+//     if (!session || (session.user?.role !== "OWNER" && session.user?.role !== "ADMIN")) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     const venueId = parseInt(params.venueId, 10);
+//     const courtId = parseInt(params.courtId, 10);
+
+//     if (isNaN(venueId) || isNaN(courtId)) {
+//       return NextResponse.json({ error: "Invalid venue or court ID" }, { status: 400 });
+//     }
+
+//     // First verify if the court exists and belongs to the venue
+//     const court = await prisma.court.findUnique({
+//       where: {
+//         id: courtId,
+//         venueId: venueId,
+//       },
+//     });
+
+//     if (!court) {
+//       return NextResponse.json({ error: "Court not found" }, { status: 404 });
+//     }
+
+//     const body = await req.json();
+//     const { date, startTime, endTime, duration, price } = body;
+
+//     if (!date || !startTime || !endTime || !duration || price === undefined) {
+//       return NextResponse.json(
+//         { error: "Missing required fields" },
+//         { status: 400 }
+//       );
+//     }
+
+//     // Create time slots between start and end time
+//     const slotDate = new Date(date);
+//     const [startHour, startMinute] = startTime.split(":").map(Number);
+//     const [endHour, endMinute] = endTime.split(":").map(Number);
+
+//     const slots = [];
+//     const durationInMs = duration * 60 * 1000; // Convert duration to milliseconds
+
+//     let currentSlotStart = new Date(slotDate);
+//     currentSlotStart.setHours(startHour, startMinute, 0, 0);
+
+//     const endDateTime = new Date(slotDate);
+//     endDateTime.setHours(endHour, endMinute, 0, 0);
+
+//     while (currentSlotStart < endDateTime) {
+//       const slotEnd = new Date(currentSlotStart.getTime() + durationInMs);
+      
+//       // Don't create slots that extend beyond the end time
+//       if (slotEnd > endDateTime) break;
+
+//       slots.push({
+//         courtId,
+//         startTime: currentSlotStart,
+//         endTime: slotEnd,
+//         price,
+//         isBooked: false,
+//       });
+
+//       currentSlotStart = slotEnd;
+//     }
+
+//     // Create all slots in a transaction
+//     const createdSlots = await prisma.$transaction(
+//       slots.map((slot) =>
+//         prisma.slot.create({
+//           data: slot,
+//         })
+//       )
+//     );
+
+//     return NextResponse.json(createdSlots);
+//   } catch (error) {
+//     console.error("Error creating slots:", error);
+//     return NextResponse.json(
+//       { error: "Failed to create slots" },
+//       { status: 500 }
+//     );
+//   }
+// }
+
+
+  // --- In your BACKEND API route file, e.g., /api/.../slots/route.ts ---
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string; courtId: string }> }
+) {
+    const params = await context.params;
     try {
         const session = await getServerSession(authOptions);
         if (!session || session.user?.role !== "OWNER") {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
         
-       const { venueId, courtId } = await params;
-      const venueIdNum = parseInt(venueId, 10);
-      const courtIdNum = parseInt(courtId, 10);
+        const { courtId } = await params;
+        const courtIdNum = parseInt(courtId, 10);
         
-        //const userId = parseInt(session.user.id, 10);
-        const body = await req.json();
-        const {startTime, endTime, duration, price} = body;
+        // --- CHANGE 1: Receive the new 'date' field from the body ---
+        const body = await request.json();
+        const { date, startTime, endTime, duration, price } = body;
 
-        // Create dates for today with the specified times
-        const today = moment().format('YYYY-MM-DD');
-        const start = moment(`${today} ${startTime}`).toDate();
-        const end = moment(`${today} ${endTime}`).toDate();
+        // Add validation for the new date field
+        if (!date || !startTime || !endTime || !duration || price === undefined) {
+            return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+        }
+        // --- END CHANGE 1 ---
+        
+        // --- CHANGE 2: Use the provided date string to create the slots ---
+        // Instead of using `new Date()`, we construct date strings from the input
+        // This ensures slots are created for the selected date, not just today
+        const startDateTimeString = `${date}T${startTime}:00`; // e.g., "2024-09-12T09:00:00"
+        const endDateTimeString = `${date}T${endTime}:00`;     // e.g., "2024-09-12T22:00:00"
 
-        // console.log("Start:", start);
-        // console.log("End:", end);
-        // console.log("Duration:", duration);
-
+        const start = new Date(startDateTimeString);
+        const end = new Date(endDateTimeString);
+        // --- END CHANGE 2 ---
+        
         let current = new Date(start);
-        const slotsToCreate = [];
+        const slotsToCreate: { courtId: number; startTime: Date; endTime: Date; price: number }[] = [];
 
         while (current < end) {
-        const slotEnd = new Date(current.getTime() + duration * 60000);
-        if (slotEnd > end) break;
+            const slotEnd = new Date(current.getTime() + duration * 60000);
+            if (slotEnd > end) break;
 
-        slotsToCreate.push({
-            courtId : courtIdNum,
-            startTime: new Date(current),
-            endTime: slotEnd,
-            price,
-        });
+            slotsToCreate.push({
+                courtId: courtIdNum,
+                startTime: new Date(current),
+                endTime: slotEnd,
+                price,
+            });
 
-        current = slotEnd;
+            current = slotEnd;
         }
-
-        //console.log("Slots to create:", slotsToCreate);
 
         if (slotsToCreate.length === 0) {
-        return NextResponse.json({ error: "No slots to create" }, { status: 400 });
+            return NextResponse.json({ error: "No slots could be generated with the given times." }, { status: 400 });
         }
         
-        const createdSlots = await prisma.slot.createMany({
-        data: slotsToCreate,
+        // This transaction correctly deletes old slots and creates new ones
+        const result = await prisma.$transaction(async (tx) => {
+            await tx.slot.deleteMany({
+                where: {
+                    courtId: courtIdNum,
+                },
+            });
+
+            const createdSlots = await tx.slot.createMany({
+                data: slotsToCreate,
+            });
+
+            return createdSlots;
         });
 
         return NextResponse.json({
-        message: "Slots generated successfully",
-        count: createdSlots.count,
+            message: "Slots generated successfully",
+            count: result.count,
         });
     } catch (error) {
-    console.error("Error generating slots:", error);
-    return NextResponse.json({ error: "Failed to generate slots" }, { status: 500 });
-  }
+        console.error("Error generating slots:", error);
+        return NextResponse.json({ error: "Failed to generate slots" }, { status: 500 });
+    }
 }
-
-

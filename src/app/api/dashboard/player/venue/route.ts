@@ -32,6 +32,19 @@ export async function GET(req: NextRequest) {
                     { description: { contains: search, mode: 'insensitive' } },
                 ],
                 ...(city ? { city: { equals: city, mode: 'insensitive' } } : {}),
+
+                 // Sport filter (independent of price)
+                ...(sport
+                    ? {
+                        courts: {
+                        some: {
+                            sport: { equals: sport, mode: "insensitive" },
+                        },
+                        },
+                    }
+                    : {}),
+
+                    // Price filter (independent of sport)
                 ...(minPrice || maxPrice ? {
                     courts: {
                         some: {
@@ -39,7 +52,7 @@ export async function GET(req: NextRequest) {
                                 ...(minPrice ? { gte: minPrice } : {}),
                                 ...(maxPrice ? { lte: maxPrice } : {})
                             },
-                            ...(sport ? { sport: { equals: sport, mode: 'insensitive' } } : {})
+                        
                         }
                     }
                 } : {})

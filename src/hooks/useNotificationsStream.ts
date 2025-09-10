@@ -1,19 +1,32 @@
 "use client"
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+interface Notification {
+  id: string;
+  read: boolean;
+  title?: string;
+  message?: string;
+  createdAt?: string;
+}
 
 export function useNotifications(role: "player" | "owner") {
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Fetch notifications
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/dashboard/${role}/notifications`);
-    const data = await res.json();
-    setNotifications(data);
-    setLoading(false);
-  };
+    try {
+      const res = await fetch(`/api/dashboard/${role}/notifications`);
+      const data = await res.json();
+      setNotifications(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [role]);
 
   // Mark one notification as read
   async function markAsRead(id: string) {
@@ -53,7 +66,7 @@ export function useNotifications(role: "player" | "owner") {
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [role]);
+  }, [fetchNotifications]); // fetchNotifications includes role in its deps
 
   return { notifications, loading, markAsRead, markAllAsRead, refetch: fetchNotifications };
 }

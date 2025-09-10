@@ -35,6 +35,13 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
     router.back();
   };
 
+  // --- CHANGE 1: Added state for the generation date ---
+  // We initialize it to today's date in YYYY-MM-DD format
+  const [generationDate, setGenerationDate] = useState(
+    new Date().toISOString().split("T")[0]
+  );
+  // --- END CHANGE 1 ---
+
   // Generator state
   const [start, setStart] = useState("07:00");
   const [end, setEnd] = useState("22:00");
@@ -61,12 +68,14 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
   async function fetchSlots() {
     try {
       setLoadingSlots(true);
-      const res = await fetch(`/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`);
-      
+      const res = await fetch(
+        `/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`
+      );
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
       console.log("Fetched slots data:", data); // Debug log
       setSlots(Array.isArray(data) ? data : []);
@@ -84,36 +93,50 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
     if (duration <= 0) return false;
     if (price < 0) return false;
     if (start >= end) return false;
+    // --- CHANGE 2: Also validate the new date field ---
+    if (!generationDate) return false;
+    // --- END CHANGE 2 ---
     return true;
   }
 
   async function generateSlots() {
     if (!validateGenerator()) {
-      toast.error("Please provide valid start/end time, duration and price.");
+      toast.error("Please provide a valid date, start/end time, duration and price.");
       return;
     }
     try {
       setGenerating(true);
-      console.log("Generating slots with:", { startTime: start, endTime: end, duration, price });
       
-      const res = await fetch(`/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ startTime: start, endTime: end, duration, price }),
-      });
+      // --- CHANGE 3: Include the new date in the payload sent to the backend ---
+      const payload = {
+        date: generationDate,
+        startTime: start,
+        endTime: end,
+        duration,
+        price,
+      };
+      console.log("Generating slots with:", payload);
+
+      const res = await fetch(
+        `/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      // --- END CHANGE 3 ---
 
       if (!res.ok) {
         const errorData = await res.json();
         console.error("API Error:", errorData);
-        throw new Error(`Failed to generate slots: ${errorData.error || res.statusText}`);
+        throw new Error(
+          `Failed to generate slots: ${errorData.error || res.statusText}`
+        );
       }
 
-      const result = await res.json();
-      //console.log("Slots generation result:", result);
-      
       toast.success("Time slots were generated successfully.");
-      
-      // Add a small delay before fetching to ensure database consistency
+
       setTimeout(() => {
         fetchSlots();
       }, 100);
@@ -124,7 +147,7 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
       setGenerating(false);
     }
   }
-
+  // ... (deleteSlot and updateSlot functions remain the same) ...
   async function deleteSlot(id: string) {
     try {
       setDeletingId(id);
@@ -185,13 +208,8 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
 
   return (
     <div className="space-y-6">
-      {/* Slot generator */}
       <div className="mb-4">
-        <Button
-          variant="outline"
-          onClick={handleBack}
-          className="mb-4"
-        >
+        <Button variant="outline" onClick={handleBack} className="mb-4">
           ← Back
         </Button>
       </div>
@@ -200,7 +218,18 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
           <CardTitle>Generate Time Slots</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* --- CHANGE 4: Add the new date input to the grid --- */}
+          {/* Adjusted grid to handle 5 items gracefully */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={generationDate}
+                onChange={(e) => setGenerationDate(e.target.value)}
+                disabled={generating}
+              />
+            </div>
             <div>
               <Label>Start Time</Label>
               <Input
@@ -242,6 +271,7 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
               />
             </div>
           </div>
+          {/* --- END CHANGE 4 --- */}
           <div className="mt-4">
             <Button onClick={generateSlots} disabled={generating}>
               {generating ? "Generating..." : "Generate Slots"}
@@ -258,13 +288,13 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
         </CardContent>
       </Card>
 
-      {/* Slots table */}
       <Card>
         <CardHeader>
           <CardTitle>Existing Slots</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
+            {/* The rest of the table remains the same and will work correctly */}
             <TableHeader>
               <TableRow>
                 <TableHead>Start</TableHead>
@@ -277,31 +307,26 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
             <TableBody>
               {(!slots || slots.length === 0) && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell
+                    colSpan={5}
+                    className="text-center text-muted-foreground"
+                  >
                     {loadingSlots ? "Loading slots..." : "No slots found."}
                   </TableCell>
                 </TableRow>
               )}
               {slots.map((slot) => (
                 <TableRow key={slot.id}>
-                  <TableCell>
-                    {new Date(slot.startTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(slot.endTime).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </TableCell>
+                  <TableCell>{slot.startTime.substring(11, 16)}</TableCell>
+                  <TableCell>{slot.endTime.substring(11, 16)}</TableCell>
                   <TableCell>{inr.format(slot.price)}</TableCell>
                   <TableCell>
                     {slot.isBooked ? (
                       <span className="text-red-600 font-medium">BOOKED</span>
                     ) : (
-                      <span className="text-green-600 font-medium">AVAILABLE</span>
+                      <span className="text-green-600 font-medium">
+                        AVAILABLE
+                      </span>
                     )}
                   </TableCell>
                   <TableCell className="flex gap-2">
@@ -399,7 +424,10 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
                               >
                                 Cancel
                               </Button>
-                              <Button onClick={updateSlot} disabled={savingEdit}>
+                              <Button
+                                onClick={updateSlot}
+                                disabled={savingEdit}
+                              >
                                 {savingEdit ? "Saving..." : "Save Changes"}
                               </Button>
                             </div>

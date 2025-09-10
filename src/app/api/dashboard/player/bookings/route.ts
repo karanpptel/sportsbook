@@ -39,49 +39,7 @@ export async function GET(req: NextRequest) {
 
 
 
-// POST - Create a new booking
-// export async function POST(req: NextRequest) {
-//     try {
-//         const session = await getServerSession(authOptions);
-    
-//         if (!session || session.user?.role !== "USER") {
-//             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-//         }
-    
-//         const userId = parseInt(session.user.id, 10);
-    
-//         const body = await req.json();
-//         const { courtId, startTime, endTime, notes } = body;
 
-//         if (!courtId || !startTime || !endTime) {
-//             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-//         }
-
-//         // Check if the court is already booked for the same time
-//             const conflict = await prisma.booking.findFirst({
-//             where: { courtId, startTime: new Date(startTime) },
-//             });
-
-//         if (conflict) {
-//             return NextResponse.json({ error: "This time slot is already booked" }, { status: 400 });
-//         }
-    
-//         const booking = await prisma.booking.create({
-//             data: {
-//                 userId,
-//                 courtId,
-//                 startTime : new Date(startTime),
-//                 endTime : new Date(endTime),
-//                 notes,
-//             },
-//         });
-    
-//         return NextResponse.json({ booking }, { status: 201 });
-//     } catch (error) {
-//         console.error(error);
-//         return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
-//     }
-// }
 
 //UPDATED CODE THAT create a new booking for a selected court and time slot, with idempotency key support (to prevent double bookings) and slot availability check.
 
@@ -135,8 +93,24 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Slot is already booked" }, { status: 400 });
         }
 
+        const slot = await prisma.slot.findFirst({
+            where: {
+                courtId,
+                startTime: start,
+                endTime: end,
+            }
+        });
 
-        // Create the booking
+        if (!slot) {
+            return NextResponse.json({ error: "Slot not found" }, { status: 404 });
+        }
+
+        if(slot.isBooked) {
+            return NextResponse.json({ error: "Slot is already booked" }, { status: 400 });
+        }
+
+    
+        // Create the booking + update slot 
         const booking = await prisma.booking.create({
             data: {
                 userId,
@@ -149,6 +123,11 @@ export async function POST(req: NextRequest) {
             },
         })
 
+        await prisma.slot.update({
+            where: { id: slot.id },
+            data: { isBooked: true },
+        });
+
         return NextResponse.json({ booking }, { status: 201 });
     } catch (error) {
         console.error(error);
@@ -157,3 +136,48 @@ export async function POST(req: NextRequest) {
     }
 }
 
+
+
+// POST - Create a new booking
+// export async function POST(req: NextRequest) {
+//     try {
+//         const session = await getServerSession(authOptions);
+    
+//         if (!session || session.user?.role !== "USER") {
+//             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//         }
+    
+//         const userId = parseInt(session.user.id, 10);
+    
+//         const body = await req.json();
+//         const { courtId, startTime, endTime, notes } = body;
+
+//         if (!courtId || !startTime || !endTime) {
+//             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+//         }
+
+//         // Check if the court is already booked for the same time
+//             const conflict = await prisma.booking.findFirst({
+//             where: { courtId, startTime: new Date(startTime) },
+//             });
+
+//         if (conflict) {
+//             return NextResponse.json({ error: "This time slot is already booked" }, { status: 400 });
+//         }
+    
+//         const booking = await prisma.booking.create({
+//             data: {
+//                 userId,
+//                 courtId,
+//                 startTime : new Date(startTime),
+//                 endTime : new Date(endTime),
+//                 notes,
+//             },
+//         });
+    
+//         return NextResponse.json({ booking }, { status: 201 });
+//     } catch (error) {
+//         console.error(error);
+//         return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
+//     }
+// }

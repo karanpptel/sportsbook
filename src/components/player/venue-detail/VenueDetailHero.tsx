@@ -61,7 +61,7 @@ export default function VenueDetailHero({ venue }: { venue: Venue }) {
 
             <div className="bg-white rounded-2xl p-2">
               <Image
-                src="/images/owner-avatar-placeholder.png"
+                src="/profile.jpg"
                 alt="owner"
                 width={56}
                 height={56}

@@ -3,10 +3,12 @@
 import React, { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify"// optional toast utility
+import { cn } from "@/lib/utils"; // shadcn helper for conditional classes
+
 
 interface Court {
   id: number;
@@ -24,6 +26,12 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
+
+   // generate simple timeslots from openTime-closeTime (for more details watch summary below)
+  const times = Array.from(
+    { length: Math.max(0, court.closeTime - court.openTime) },
+    (_, i) => `${(court.openTime + i).toString().padStart(2, "0")}:00`
+  );
 
   async function handleConfirm() {
     if (!date || !time) {
@@ -52,6 +60,7 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
           userId: parseInt(session.user.id, 10),
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
+          notes: "", //   optional
           idempotencyKey: `${court.id}-${startTime.toISOString()}-${session.user.id}`,
         }),
       });
@@ -61,8 +70,11 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
         throw new Error(error.error || "Failed to book court");
       }
 
-      setOpen(false);
+      
       toast.success("Booking confirmed. Check your bookings page for details.");
+      setOpen(false);
+      setDate("");
+      setTime("");
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : "Booking failed. Please try again.");
@@ -70,37 +82,50 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
       setLoading(false);
     }
   }
-
-  // generate simple timeslots from openTime-closeTime
-  const times = Array.from(
-    { length: Math.max(0, court.closeTime - court.openTime) },
-    (_, i) => `${(court.openTime + i).toString().padStart(2, "0")}:00`
-  );
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white">Book</Button>
+        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md">
+          Book
+        </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-lg">
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Book {court.name}</h3>
+      <DialogContent className="max-w-lg p-6 rounded-2xl shadow-lg">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold">{`Book ${court.name}`}</DialogTitle>
+          <DialogDescription>
+            Select your preferred date and time slot to reserve this court.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          {/* Date Picker */}
           <div>
-            <Label htmlFor="date">Date</Label>
-            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Label htmlFor="date" className="text-sm font-medium">Date</Label>
+            <Input
+              id="date"
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-1"
+            />
           </div>
 
+          {/* Time Slots */}
           <div>
-            <Label>Time slot</Label>
-            <div className="grid grid-cols-3 gap-2 mt-2 max-h-40 overflow-auto">
+            <Label className="text-sm font-medium">Time slot</Label>
+            <div className="grid grid-cols-3 gap-2 mt-2 max-h-40 overflow-y-auto pr-1">
               {times.map((t) => (
                 <button
                   key={t}
+                  type="button"
                   onClick={() => setTime(t)}
-                  className={`text-sm px-3 py-2 rounded-lg border ${
-                    time === t ? "bg-emerald-600 text-white border-emerald-600" : "bg-white"
-                  }`}
+                  className={cn(
+                    "text-sm px-3 py-2 rounded-lg border transition-all duration-150",
+                    time === t
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-white hover:bg-slate-100"
+                  )}
                 >
                   {t}
                 </button>
@@ -108,20 +133,51 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
+          {/* Price & Actions */}
+          <div className="flex items-center justify-between border-t pt-4">
             <div>
-              <div className="text-sm text-slate-500">Price</div>
-              <div className="font-medium">{court.currency} {court.pricePerHour} / hour</div>
+              <p className="text-sm text-muted-foreground">Price</p>
+              <p className="font-medium">
+                {court.currency} {court.pricePerHour} / hour
+              </p>
             </div>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-              <Button onClick={handleConfirm} disabled={loading}>
+            <DialogFooter className="flex gap-2">
+              <Button variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+                Cancel
+              </Button>
+              <Button onClick={handleConfirm} disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
                 {loading ? "Booking..." : "Confirm"}
               </Button>
-            </div>
+            </DialogFooter>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+
+
+
+
+
+
+// Here's a breakdown of what's happening: in generate simple timeslots from openTime-closeTime 
+// This code generates an array of time slots based on the openTime and closeTime properties of the court object.
+
+// Math.max(0, court.closeTime - court.openTime): This calculates the number of hours between openTime and closeTime. The Math.max function ensures that the result is not negative, in case closeTime is less than openTime.
+// Array.from({ length: ... }, ...): This creates a new array with the calculated length. The Array.from method takes two arguments: an object with a length property, and a callback function.
+// (_, i) =>
+// ${(court.openTime + i).toString().padStart(2, "0")}:00``: This is the callback function that generates each time slot string. It takes two arguments: _ (which is ignored), and i, which is the index of the current iteration.
+// Here's what happens inside the callback function:
+
+// court.openTime + i: This adds the current index i to the openTime value, effectively incrementing the hour.
+// (court.openTime + i).toString()
+// : This converts the resulting hour value to a string.
+// .padStart(2, "0"): This pads the hour string with leading zeros if necessary, to ensure it's always two digits long (e.g., "08" instead of "8").
+// :00: This appends a colon and "00" to the hour string, creating a time slot in the format "HH:00" (e.g., "08:00").
+// The resulting array times will contain time slots from openTime to closeTime, incrementing by one hour each. For example, if openTime is 8 and closeTime is 18, the times array might look like this:
+
+// ["08:00", "09:00", "10:00", ..., "17:00"]
+
+// This array is likely used to populate a dropdown or list of available time slots for booking.

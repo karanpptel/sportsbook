@@ -1,11 +1,9 @@
+// src/components/player/VenueFilters.tsx
 "use client";
 
 import React from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
 
 type Props = {
   cities: string[];
@@ -15,9 +13,12 @@ type Props = {
   onSportChange: (s: string | null) => void;
   sortBy: "featured" | "price_asc" | "price_desc" | "rating";
   onSortChange: (s: "featured" | "price_asc" | "price_desc" | "rating") => void;
+  selectedAmenities: string[];
+  onAmenitiesChange: (a: string[]) => void;
 };
 
 const SPORT_OPTIONS = ["Tennis", "Badminton", "Football", "Basketball", "Cricket", "Squash"];
+const AMENITY_OPTIONS = ["Parking","Lights","WiFi","Seating Area","Cafeteria","Restrooms","First Aid", "Equipment Rental", "Locker Room"];
 
 export default function VenueFilters({
   cities,
@@ -27,7 +28,17 @@ export default function VenueFilters({
   onSportChange,
   sortBy,
   onSortChange,
+  selectedAmenities,
+  onAmenitiesChange,
 }: Props) {
+  function toggleAmenity(a: string) {
+    if (selectedAmenities.includes(a)) {
+      onAmenitiesChange(selectedAmenities.filter((x) => x !== a));
+    } else {
+      onAmenitiesChange([...selectedAmenities, a]);
+    }
+  }
+
   return (
     <aside className="space-y-4">
       <div className="bg-white border border-slate-100 rounded-2xl p-4">
@@ -35,13 +46,19 @@ export default function VenueFilters({
           <h4 className="text-sm font-semibold">Filters</h4>
           <button
             className="text-xs text-slate-500 hover:text-slate-700"
-            onClick={() => { onCityChange(null); onSportChange(null); onSortChange("featured"); }}
+            onClick={() => {
+              onCityChange(null);
+              onSportChange(null);
+              onSortChange("featured");
+              onAmenitiesChange([]);
+            }}
           >
             Reset
           </button>
         </div>
 
         <div className="space-y-3">
+          {/* City */}
           <div>
             <Label className="text-xs">City</Label>
             <Select value={selectedCity ?? ""} onValueChange={(v) => onCityChange(v || null)}>
@@ -49,7 +66,6 @@ export default function VenueFilters({
                 <SelectValue placeholder="All cities" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All cities</SelectItem>
                 {cities.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
@@ -57,6 +73,7 @@ export default function VenueFilters({
             </Select>
           </div>
 
+          {/* Sport */}
           <div>
             <Label className="text-xs">Sport</Label>
             <Select value={selectedSport ?? ""} onValueChange={(v) => onSportChange(v || null)}>
@@ -64,7 +81,6 @@ export default function VenueFilters({
                 <SelectValue placeholder="All sports" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All sports</SelectItem>
                 {SPORT_OPTIONS.map((s) => (
                   <SelectItem key={s} value={s}>{s}</SelectItem>
                 ))}
@@ -72,6 +88,7 @@ export default function VenueFilters({
             </Select>
           </div>
 
+          {/* Sort */}
           <div>
             <Label className="text-xs">Sort</Label>
             <Select value={sortBy} onValueChange={(v) => onSortChange(v as any)}>
@@ -86,25 +103,27 @@ export default function VenueFilters({
               </SelectContent>
             </Select>
           </div>
-
-          <div>
-            <Label className="text-xs">Date</Label>
-            <div className="flex gap-2">
-              <Input type="date" />
-              <Button variant="outline" className="px-3"><Calendar className="w-4 h-4" /></Button>
-            </div>
-          </div>
         </div>
       </div>
 
+      {/* Amenities */}
       <div className="bg-white border border-slate-100 rounded-2xl p-4">
         <h5 className="text-sm font-semibold mb-2">Amenities</h5>
         <div className="grid grid-cols-2 gap-2">
-          {["Parking","Lights","WiFi","Seating Area","Cafeteria","Restrooms"].map((a) => (
-            <button key={a} className="text-xs border rounded-md px-3 py-1 text-slate-700 hover:bg-slate-50">
-              {a}
-            </button>
-          ))}
+          {AMENITY_OPTIONS.map((a) => {
+            const active = selectedAmenities.includes(a);
+            return (
+              <button
+                key={a}
+                onClick={() => toggleAmenity(a)}
+                className={`text-xs border rounded-md px-3 py-1 transition ${
+                  active ? "bg-slate-800 text-white" : "text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {a}
+              </button>
+            );
+          })}
         </div>
       </div>
     </aside>

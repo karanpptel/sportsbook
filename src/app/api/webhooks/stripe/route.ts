@@ -3,9 +3,11 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 
-export async function POST(req: Request) {
-  const sig = req.headers.get("stripe-signature") as string;
-  const body = await req.text();
+import { NextRequest } from "next/server";
+
+export async function POST(request: NextRequest) {
+  const sig = request.headers.get("stripe-signature") as string;
+  const body = await request.text();
 
   let event: Stripe.Event;
 

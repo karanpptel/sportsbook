@@ -5,11 +5,14 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 import { recalcVenuePriceRange } from "@/lib/prismaHelper";
 
-type Params = { params: { venueId: string, courtId: string } };
-
+import { NextRequest } from "next/server";
 
 // ✅ PATCH: Update a court
-export async function PATCH(req: Request, { params }: Params) {
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string; courtId: string }> }
+) {
+    const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== "OWNER") {
@@ -18,7 +21,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const venueId = Number(params.venueId);
     const courtId = Number(params.courtId);
-    const body = await req.json();
+    const body = await request.json();
     const userId = Number(session.user.id);
 
     // Verify ownership
@@ -56,7 +59,11 @@ export async function PATCH(req: Request, { params }: Params) {
 
 
 // ✅ DELETE: Remove a court
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ venueId: string; courtId: string }> }
+) {
+    const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session || session.user?.role !== "OWNER") {
