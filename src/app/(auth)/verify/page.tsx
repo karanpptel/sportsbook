@@ -5,7 +5,7 @@
 import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
@@ -28,10 +28,12 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 
-export default function VerifyOtpPage() {
+function VerifyOtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const emailFromQuery = searchParams.get("email") || "";
+
+
 
   const [loading, setLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0); // seconds until next OTP can be resent
@@ -227,5 +229,20 @@ export default function VerifyOtpPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+export default function VerifyOtpPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-full max-w-md space-y-8 px-4 py-8">
+          Loading...
+        </div>
+      </div>
+    }>
+      <VerifyOtpContent />
+    </Suspense>
   );
 }
