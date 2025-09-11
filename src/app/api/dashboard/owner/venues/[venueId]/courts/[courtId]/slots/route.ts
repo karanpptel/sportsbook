@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
+//import { zonedTimeToUtc } from 'date-fns-tz/esm';
 
 export async function GET(
   request: NextRequest,
@@ -155,7 +156,7 @@ export async function POST(
         if (!session || session.user?.role !== "OWNER") {
         }
         
-        const { courtId } = await params;
+        const { courtId } = await context.params;
         const courtIdNum = parseInt(courtId, 10);
         
         // --- CHANGE 1: Receive the new 'date' field from the body ---
@@ -171,12 +172,15 @@ export async function POST(
         // --- CHANGE 2: Use the provided date string to create the slots ---
         // Instead of using `new Date()`, we construct date strings from the input
         // This ensures slots are created for the selected date, not just today
-        const startDateTimeString = `${date}T${startTime}:00`; // e.g., "2024-09-12T09:00:00"
-        const endDateTimeString = `${date}T${endTime}:00`;     // e.g., "2024-09-12T22:00:00"
+        //const timeZone = 'Asia/Kolkata';
+        const startDateTimeString = `${date}T${startTime}:00Z`; // e.g., "2024-09-12T09:00:00"
+        const endDateTimeString = `${date}T${endTime}:00Z`;     // e.g., "2024-09-12T22:00:00"
 
+        //  const start = zonedTimeToUtc(startDateTimeString, timeZone);
+        // const end =  zonedTimeToUtc(endDateTimeString, timeZone);
         const start = new Date(startDateTimeString);
         const end = new Date(endDateTimeString);
-        // --- END CHANGE 2 ---
+        //--- END CHANGE 2 ---
         
         let current = new Date(start);
         const slotsToCreate: { courtId: number; startTime: Date; endTime: Date; price: number }[] = [];
@@ -194,6 +198,8 @@ export async function POST(
 
             current = slotEnd;
         }
+       
+
 
         if (slotsToCreate.length === 0) {
             return NextResponse.json({ error: "No slots could be generated with the given times." }, { status: 400 });

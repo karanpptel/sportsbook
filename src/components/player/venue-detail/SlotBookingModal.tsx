@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify"// optional toast utility
 import { cn } from "@/lib/utils"; // shadcn helper for conditional classes
+import { loadStripe } from "@stripe/stripe-js";
+
 
 
 interface Court {
@@ -49,8 +51,8 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
     try {
       const startTime = new Date(`${date}T${time}`);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
-
-      const response = await fetch("/api/dashboard/player/bookings", {
+      // Step 1: Create booking
+      const bookingRes = await fetch("/api/dashboard/player/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -65,19 +67,35 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to book court");
-      }
+      if (!bookingRes.ok) throw new Error("Failed to create booking");
+        const bookingData = await bookingRes.json();
+        const bookingId = bookingData.booking?.id || bookingData.bookingId;
 
-      
-      toast.success("Booking confirmed. Check your bookings page for details.");
+        // Step 2: Create Stripe checkout session
+        const paymentRes = await fetch("/api/payments/create", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bookingId }),
+        });
+        if (!paymentRes.ok) throw new Error("Failed to create payment intent");
+        const {sessionId} = await paymentRes.json();
+        //const clientSecret = paymentData.clientSecret;
+
+        // Step 3: Show Stripe payment modal (use @stripe/stripe-js)
+        // Example:
+        const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+        if (stripe && sessionId) {
+          await stripe.redirectToCheckout({ sessionId });
+        }
+
+      // Success: show toast, close modal, etc.
+      toast.success("Booking created! Please complete payment to confirm your booking.");
       setOpen(false);
       setDate("");
       setTime("");
     } catch (err) {
       console.error(err);
-      toast.error(err instanceof Error ? err.message : "Booking failed. Please try again.");
+      toast.error(err instanceof Error ? err.message : "Booking or payment failed. Please try again.");
     } finally {
       setLoading(false);
     }
