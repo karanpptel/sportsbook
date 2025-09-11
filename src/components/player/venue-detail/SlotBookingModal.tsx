@@ -47,7 +47,7 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
     }
 
     setLoading(true);
-
+console.log("court in handleConfirm", court.id)
     try {
       const startTime = new Date(`${date}T${time}`);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration

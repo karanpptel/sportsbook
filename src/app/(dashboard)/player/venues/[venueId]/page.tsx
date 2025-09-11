@@ -22,11 +22,11 @@ async function fetchReviews(venueId: string) {
 }
 
 interface PageProps {
-  params: { venueId: string };
+  params: Promise<{ venueId: string }>;
 }
 
 export default async function VenuePage({ params }: PageProps) {
-  const { venueId } = params;
+  const { venueId } = await params;
   const venue = await fetchVenue(venueId);
   const reviews = await fetchReviews(venueId);
 

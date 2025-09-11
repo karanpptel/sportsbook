@@ -53,18 +53,20 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json();
         const { courtId, userId, startTime, endTime, notes, idempotencyKey } = body;
+//console.log("body", body)
 
-
+ 
         //Check if booking with the same idempotency exists
+        
         if(idempotencyKey) {
-            const existing = await prisma.booking.findUnique({
-                where: { idempotencyKey },
-            });
+    const existing = await prisma.booking.findUnique({
+        where: { idempotencyKey },
+    });
 
-            if (existing) {
-                return NextResponse.json({ error: "Booking already exists with the same idempotency key" }, { status: 400 });
-            }
-        }
+    if (existing) {
+        return NextResponse.json({ error: "Booking already exists with the same idempotency key" }, { status: 400 });
+    }
+}
 
         const start = new Date(startTime);
         const end = new Date(endTime);
@@ -75,42 +77,27 @@ export async function POST(req: NextRequest) {
         });
 
         if (!court) {
+            console.log("court not found")
             return NextResponse.json({ error: "Court not found" }, { status: 404 });
         }
         
 
-        // Check if slot is available
+        // Check if the time slot is already booked
         const overlappingBooking = await prisma.booking.findFirst({
             where: {
                 courtId,
                 startTime: { lte: end },
                 endTime: { gte: start },
+                status: { in: ["PENDING", "CONFIRMED"] } // Only check active bookings
             }
         });
-
 
         if (overlappingBooking) {
-            return NextResponse.json({ error: "Slot is already booked" }, { status: 400 });
-        }
-
-        const slot = await prisma.slot.findFirst({
-            where: {
-                courtId,
-                startTime: start,
-                endTime: end,
-            }
-        });
-
-        if (!slot) {
-            return NextResponse.json({ error: "Slot not found" }, { status: 404 });
-        }
-
-        if(slot.isBooked) {
-            return NextResponse.json({ error: "Slot is already booked" }, { status: 400 });
+            return NextResponse.json({ error: "This time slot is already booked" }, { status: 400 });
         }
 
     
-        // Create the booking + update slot 
+        // Create the booking
         const booking = await prisma.booking.create({
             data: {
                 userId,
@@ -118,14 +105,9 @@ export async function POST(req: NextRequest) {
                 startTime: start,
                 endTime: end,
                 status: "PENDING",
-                notes,
+                notes, // optional
                 idempotencyKey,
             },
-        })
-
-        await prisma.slot.update({
-            where: { id: slot.id },
-            data: { isBooked: true },
         });
 
         return NextResponse.json({ booking }, { status: 201 });

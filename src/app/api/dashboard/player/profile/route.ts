@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "PLAYER") {
+    if (!session || session.user.role !== "USER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -34,13 +34,15 @@ export async function GET() {
   }
 }
 
+
+
 // ✅ UPDATE player profile
 import { NextRequest } from "next/server";
 
 export async function PUT(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== "PLAYER") {
+    if (!session || session.user.role !== "USER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

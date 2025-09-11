@@ -68,6 +68,12 @@ export default function Navbar() {
           { href: "/contact", label: "Contact" },
         ];
 
+    const profileDropdownLinks: Record<Exclude<Role, "GUEST">, NavLink> = {
+      USER: { href: "/player/profile", label: "Player Profile" },
+      OWNER: { href: "/owner/settings", label: "Owner Settings" },
+      ADMIN: { href: "/admin/settings", label: "Admin Settings" },
+    };
+        
   return (
     <header className="w-full shadow-sm bg-white sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -119,6 +125,11 @@ export default function Navbar() {
                   Signed in as <br />
                   <span className="font-semibold">{session.user?.email}</span>
                 </DropdownMenuLabel>
+                <DropdownMenuItem>
+                  <Link href={profileDropdownLinks[role as keyof typeof profileDropdownLinks].href}>
+                  {profileDropdownLinks[role as keyof typeof profileDropdownLinks].label}
+                </Link>
+              </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/profile">My Profile</Link>
@@ -127,6 +138,7 @@ export default function Navbar() {
                   <DropdownMenuItem asChild>
                     <Link href="/player/bookings">My Bookings</Link>
                   </DropdownMenuItem>
+                   
                 )}
                 {role === "OWNER" && (
                   <DropdownMenuItem asChild>
