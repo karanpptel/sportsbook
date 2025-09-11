@@ -171,8 +171,8 @@ export async function POST(
         // --- CHANGE 2: Use the provided date string to create the slots ---
         // Instead of using `new Date()`, we construct date strings from the input
         // This ensures slots are created for the selected date, not just today
-        const startDateTimeString = `${date}T${startTime}:00`; // e.g., "2024-09-12T09:00:00"
-        const endDateTimeString = `${date}T${endTime}:00`;     // e.g., "2024-09-12T22:00:00"
+        const startDateTimeString = `${date}T${startTime}:00Z`; // e.g., "2024-09-12T09:00:00Z"
+        const endDateTimeString = `${date}T${endTime}:00Z`;     // e.g., "2024-09-12T22:00:00Z"
 
         const start = new Date(startDateTimeString);
         const end = new Date(endDateTimeString);
