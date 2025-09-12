@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "react-toastify";
+import Link from "next/link";
 
 const contactSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -44,18 +45,26 @@ export default function ContactPage() {
 
   return (
     <main className="flex flex-col min-h-screen">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white py-16 text-center">
-        <h1 className="text-4xl md:text-5xl font-bold">Contact Us</h1>
-        <p className="mt-4 text-lg text-blue-100">
-          Have questions? Get in touch with us today.
-        </p>
+      {/* Hero */}
+      <section className="relative min-h-[40vh] flex items-center">
+        <img
+          src="https://images.unsplash.com/photo-1471295253337-3ceaaedca402?q=80&w=1920&auto=format&fit=crop"
+          alt="Contact SportifyHub"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative z-10 w-full text-center text-white px-6">
+          <h1 className="text-4xl md:text-5xl font-bold">Contact Us</h1>
+          <p className="mt-4 text-lg text-white/90">
+            Have questions? Our team is here to help.
+          </p>
+        </div>
       </section>
 
       {/* Contact Section */}
       <section className="px-6 py-16 max-w-6xl mx-auto grid md:grid-cols-2 gap-10">
         {/* Contact Form */}
-        <Card className="shadow-lg">
+        <Card className="shadow-sm">
           <CardContent className="p-8">
             <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
             <Form {...form}>
@@ -81,11 +90,7 @@ export default function ContactPage() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="you@example.com"
-                          {...field}
-                        />
+                        <Input type="email" placeholder="you@example.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -99,11 +104,7 @@ export default function ContactPage() {
                     <FormItem>
                       <FormLabel>Message</FormLabel>
                       <FormControl>
-                        <Textarea
-                          rows={5}
-                          placeholder="Type your message..."
-                          {...field}
-                        />
+                        <Textarea rows={5} placeholder="Type your message..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -118,9 +119,9 @@ export default function ContactPage() {
           </CardContent>
         </Card>
 
-        {/* Google Map & Info */}
+        {/* Map & Info */}
         <div className="flex flex-col gap-6">
-          <Card className="shadow-lg">
+          <Card className="shadow-sm">
             <CardContent className="p-4">
               <h2 className="text-2xl font-bold mb-4">Find Us</h2>
               <div className="w-full h-64 rounded-lg overflow-hidden">
@@ -137,7 +138,7 @@ export default function ContactPage() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-lg">
+          <Card className="shadow-sm">
             <CardContent className="p-6 space-y-2">
               <h2 className="text-xl font-semibold">Get in Touch</h2>
               <p>Email: support@sportifyhub.com</p>
@@ -145,6 +146,26 @@ export default function ContactPage() {
               <p>Location: Ahmedabad, Gujarat, India</p>
             </CardContent>
           </Card>
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="px-6 pb-16">
+        <div className="max-w-7xl mx-auto">
+          <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 p-10 text-white flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div>
+              <h3 className="text-2xl md:text-3xl font-bold">Prefer to talk?</h3>
+              <p className="text-white/90 mt-1">Schedule a quick call and we’ll walk you through.</p>
+            </div>
+            <div className="flex gap-3">
+              <a href="mailto:support@sportifyhub.com">
+                <Button size="lg" className="bg-white text-blue-700 hover:bg-white/90">Email Us</Button>
+              </a>
+              <Link href="/venues">
+                <Button size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20">Browse Venues</Button>
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
     </main>

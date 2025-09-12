@@ -1,4 +1,4 @@
-// File: src/app/venues/[id]/page.tsx
+// File: src/app/searchvenues/[id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";

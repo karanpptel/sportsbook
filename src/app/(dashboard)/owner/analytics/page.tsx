@@ -23,6 +23,7 @@ import {
   Legend,
 } from "recharts";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
 
 // Types
 interface Stat {
@@ -71,7 +72,7 @@ export default function OwnerAnalyticsPage() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/dashboard/owner/reports?start=${startDate}&end=${endDate}`
+        `/api/dashboard/owner/reports?startDate=${startDate}&endDate=${endDate}`
       );
       if (!res.ok) {
         const error = await res.json();
@@ -97,7 +98,7 @@ export default function OwnerAnalyticsPage() {
         },
         {
           title: "Earnings",
-          value: `₹${data.stats.earnings}`,
+          value: `₹${data.stats.earnings / 100}`,
           subtitle: "Revenue earned",
           icon: <DollarSign className="text-yellow-600" />,
         },
@@ -109,7 +110,10 @@ export default function OwnerAnalyticsPage() {
         },
       ]);
 
-      setRevenueData(data.revenue);
+      setRevenueData(data.revenue.map((d: RevenueData) => ({
+        ...d,
+        revenue: d.revenue / 100,
+      })));
       setBookingData(data.bookings);
       setVenuePopularity(data.venuePopularity);
       setRatingData(data.ratings);
@@ -123,12 +127,12 @@ export default function OwnerAnalyticsPage() {
 
   useEffect(() => {
     fetchAnalytics();
-  }, []);
+  }, [startDate, endDate]);
 
   async function exportReport(format: "csv" | "xlsx") {
     try {
       const res = await fetch(
-        `/api/dashboard/owner/reports?start=${startDate}&end=${endDate}&format=${format}`
+        `/api/dashboard/owner/reports?startDate=${startDate}&endDate=${endDate}&export=${format}`
       );
       if (!res.ok) throw new Error("Failed to download report");
 

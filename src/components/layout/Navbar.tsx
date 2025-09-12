@@ -37,7 +37,7 @@ const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
     { href: "/owner/bookings", label: "Manage Bookings" },
     //{ href: "/contact", label: "Contact" },
     { href: "/owner/analytics", label: "Analytics" },
-    { href: "/owner/settings", label: "Settings" },
+    //{ href: "/owner/settings", label: "Settings" },
   ],
   ADMIN: [
     { href: "/", label: "Home" },
@@ -68,11 +68,11 @@ export default function Navbar() {
           { href: "/contact", label: "Contact" },
         ];
 
-    const profileDropdownLinks: Record<Exclude<Role, "GUEST">, NavLink> = {
-      USER: { href: "/player/profile", label: "Player Profile" },
-      OWNER: { href: "/owner/settings", label: "Owner Settings" },
-      ADMIN: { href: "/admin/settings", label: "Admin Settings" },
-    };
+    // const profileDropdownLinks: Record<Exclude<Role, "GUEST">, NavLink> = {
+    //   USER: { href: "/player/profile", label: "Player Profile" },
+    //   OWNER: { href: "/owner/settings", label: "Settings" },
+    //   ADMIN: { href: "/admin/settings", label: "Admin Settings" },
+    // };
         
   return (
     <header className="w-full shadow-sm bg-white sticky top-0 z-50">
@@ -125,24 +125,33 @@ export default function Navbar() {
                   Signed in as <br />
                   <span className="font-semibold">{session.user?.email}</span>
                 </DropdownMenuLabel>
-                <DropdownMenuItem>
+                {/* <DropdownMenuItem>
                   <Link href={profileDropdownLinks[role as keyof typeof profileDropdownLinks].href}>
                   {profileDropdownLinks[role as keyof typeof profileDropdownLinks].label}
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <Link href="/profile">My Profile</Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 {role === "USER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/player/bookings">My Bookings</Link>
+                  </DropdownMenuItem>  
+                )}
+                {role === "USER" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/player/profile">Settings</Link>
                   </DropdownMenuItem>
-                   
                 )}
                 {role === "OWNER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/owner/venues">Manage Venues</Link>
+                  </DropdownMenuItem>
+                )}
+                {role === "OWNER" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/owner/settings">Settings</Link>
                   </DropdownMenuItem>
                 )}
                 {role === "ADMIN" && (

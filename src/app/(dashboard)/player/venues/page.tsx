@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
+import { ProtectedRoutes } from "@/components/dashboard/layout/ProtectedRoute";
 
 
 
@@ -142,6 +143,7 @@ export default function PlayerVenuesPage() {
   }, [venues]);
 
   return (
+    <ProtectedRoutes allowedRoles={['USER']}>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -226,5 +228,6 @@ export default function PlayerVenuesPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoutes>
   );
 }
