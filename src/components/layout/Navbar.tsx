@@ -70,7 +70,7 @@ export default function Navbar() {
 
     const profileDropdownLinks: Record<Exclude<Role, "GUEST">, NavLink> = {
       USER: { href: "/player/profile", label: "Player Profile" },
-      OWNER: { href: "/owner/settings", label: "Owner Profile" },
+      OWNER: { href: "/owner/settings", label: "Owner Settings" },
       ADMIN: { href: "/admin/settings", label: "Admin Settings" },
     };
         
@@ -125,11 +125,11 @@ export default function Navbar() {
                   Signed in as <br />
                   <span className="font-semibold">{session.user?.email}</span>
                 </DropdownMenuLabel>
-                <DropdownMenuItem>
+                {/* <DropdownMenuItem>
                   <Link href={profileDropdownLinks[role as keyof typeof profileDropdownLinks].href}>
                   {profileDropdownLinks[role as keyof typeof profileDropdownLinks].label}
                 </Link>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
                 <DropdownMenuSeparator />
                 {/* <DropdownMenuItem asChild>
                   <Link href="/profile">My Profile</Link>
@@ -137,12 +137,21 @@ export default function Navbar() {
                 {role === "USER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/player/bookings">My Bookings</Link>
+                  </DropdownMenuItem>  
+                )}
+                {role === "USER" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/player/profile">Settings</Link>
                   </DropdownMenuItem>
-                   
                 )}
                 {role === "OWNER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/owner/venues">Manage Venues</Link>
+                  </DropdownMenuItem>
+                )}
+                {role === "OWNER" && (
+                  <DropdownMenuItem asChild>
+                    <Link href="/owner/settings">Settings</Link>
                   </DropdownMenuItem>
                 )}
                 {role === "ADMIN" && (

@@ -1,83 +1,127 @@
 // src/app/(dashboard)/player/page.tsx
 "use client";
 
-//import { DashboardLayout } from "@/components/dashboard/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, CheckCircle, Wallet } from "lucide-react";
 import { useSession } from "next-auth/react";
+
 import { ProtectedRoutes } from "@/components/dashboard/layout/ProtectedRoute";
+import { WelcomeSection } from "@/components/player/dashboard/WelcomeSection";
+import { StatsSection } from "@/components/player/dashboard/StatsSection";
+import { BookingsSection } from "@/components/player/dashboard/BookingsSection";
+import { RecommendedVenues } from "@/components/player/dashboard/RecommendedVenues";
+import { useEffect, useState } from "react";
+
+
+interface DashboardStats {
+  upcomingBookings: number;
+  completedGames: number;
+  walletBalance: number;
+  totalHoursPlayed: number;
+  bookingRate: number;
+}
+
+interface RecentBooking {
+  id: string;
+  venue: string;
+  date: string;
+  time: string;
+  sport: string;
+  price: number;
+  status: "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
+}
+
+interface RecommendedVenue {
+  id: string;
+  name: string;
+  location: string;
+  image: string;
+  rating: number;
+  sport: string;
+  pricePerHour: number;
+}
+
+
 
 export default function PlayerDashboardPage() {
   const { data: session } = useSession();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<DashboardStats>({
+    upcomingBookings: 0,
+    completedGames: 0,
+    walletBalance: 0,
+    totalHoursPlayed: 0,
+    bookingRate: 0,
+  });
+  const [recentBookings, setRecentBookings] = useState<RecentBooking[]>([]);
+  const [recommendedVenues, setRecommendedVenues] = useState<RecommendedVenue[]>([]);
 
-  const stats = [
-    { title: "Upcoming Bookings", value: "3", icon: <Calendar className="text-green-600" /> },
-    { title: "Completed Games", value: "12", icon: <CheckCircle className="text-green-600" /> },
-    { title: "Wallet Balance", value: "₹1500", icon: <Wallet className="text-green-600" /> },
-  ];
+  const [error, setError] = useState<string | null>(null);
 
-  const recentBookings = [
-    { id: "B001", venue: "City Sports Arena", date: "2025-09-05", status: "Confirmed" },
-    { id: "B002", venue: "Green Park Turf", date: "2025-09-01", status: "Completed" },
-    { id: "B003", venue: "Arena Club", date: "2025-08-28", status: "Cancelled" },
-  ];
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch stats
+        const statsRes = await fetch("/api/dashboard/player/stats");
+        if (!statsRes.ok) throw new Error("Failed to fetch stats");
+        const statsData = await statsRes.json();
+        if (statsData) setStats(statsData);
+
+        // Fetch recent bookings
+        const bookingsRes = await fetch("/api/dashboard/player/bookings?limit=5");
+        if (!bookingsRes.ok) throw new Error("Failed to fetch bookings");
+        const bookingsData = await bookingsRes.json();
+        if (bookingsData?.bookings) setRecentBookings(bookingsData.bookings);
+
+        // Fetch recommended venues
+        const venuesRes = await fetch("/api/dashboard/player/recommended-venues");
+        if (!venuesRes.ok) throw new Error("Failed to fetch venues");
+        const venuesData = await venuesRes.json();
+        if (venuesData?.venues) setRecommendedVenues(venuesData.venues);
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        setError(error instanceof Error ? error.message : "Failed to load dashboard data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <ProtectedRoutes allowedRoles={["USER", "PLAYER"]}>
+        <div className="space-y-6 p-6">
+          <div className="h-32 bg-gray-100 animate-pulse rounded-2xl" />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-24 bg-gray-100 animate-pulse rounded-xl" />
+            ))}
+          </div>
+          <div className="h-96 bg-gray-100 animate-pulse rounded-2xl" />
+        </div>
+      </ProtectedRoutes>
+    );
+  }
 
   return (
-  <ProtectedRoutes allowedRoles={["USER","PLAYER"]}>
-      {/* <DashboardLayout> */}
-      <div className="space-y-6">
-        {/* Welcome */}
-        <h2 className="text-2xl font-bold text-gray-800">
-          Welcome back, {session?.user?.name || "Player"} 👋
-        </h2>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {stats.map((stat) => (
-            <Card key={stat.title} className="shadow-sm rounded-2xl">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-                {stat.icon}
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-              </CardContent>
-            </Card>
-          ))}
+    <ProtectedRoutes allowedRoles={["USER", "PLAYER"]}>
+      <div className="space-y-6 p-6">
+        <WelcomeSection 
+          userName={session?.user?.name ?? ""} 
+          avatarUrl={session?.user?.image ?? ""} 
+        />
+        
+        <StatsSection stats={stats} />
+        
+        <div className="grid grid-cols-1 gap-6">
+          <BookingsSection recentBookings={recentBookings} />
+          <RecommendedVenues venues={recommendedVenues} />
         </div>
-
-        {/* Recent Bookings */}
-        <Card className="shadow-sm rounded-2xl">
-          <CardHeader>
-            <CardTitle>Recent Bookings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Venue</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentBookings.map((booking) => (
-                  <TableRow key={booking.id}>
-                    <TableCell className="font-medium">{booking.id}</TableCell>
-                    <TableCell>{booking.venue}</TableCell>
-                    <TableCell>{booking.date}</TableCell>
-                    <TableCell>{booking.status}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       </div>
-    {/* </DashboardLayout> */}
-  </ProtectedRoutes>
-    
+    </ProtectedRoutes>
   );
 }

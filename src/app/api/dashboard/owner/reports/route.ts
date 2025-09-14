@@ -5,6 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { Parser } from "json2csv"; // CSV export
 import ExcelJS from "exceljs"; // Excel export
+import { format } from "date-fns";
 
 
 export async function GET(req: Request) {
@@ -64,21 +65,32 @@ export async function GET(req: Request) {
       select: {
         id: true,
         name: true,
-        _count: {
-          select: { courts: { where: { bookings: { some:  {startTime: { gte: startDate, lte: endDate }} } } } },
-        },
         courts: {
           select: {
             id: true,
-            bookings: {
-              where: { startTime: { gte: startDate, lte: endDate } },
+            _count: {
               select: {
-                payment: { where: { status: "SUCCEEDED" }, select: { amount: true } },
-              },
+                bookings: {
+                  where: {
+                    startTime: { gte: startDate, lte: endDate }
+                  }
+                }
+              }
             },
-          },
-        },
-      },
+            bookings: {
+              where: {
+                startTime: { gte: startDate, lte: endDate }
+              },
+              select: {
+                payment: {
+                  where: { status: "SUCCEEDED" },
+                  select: { amount: true }
+                }
+              }
+            }
+          }
+        }
+      }
     });
 
 
@@ -91,7 +103,7 @@ export async function GET(req: Request) {
         );
       }, 0);
 
-    const totalBookings = venue._count.courts;
+      const totalBookings = venue.courts.reduce((sum, court) => sum + court._count.bookings, 0);
       return { id: venue.id, name: venue.name, totalBookings, totalEarnings };
     });
 
@@ -135,13 +147,55 @@ export async function GET(req: Request) {
       });
     }
 
-    //Default JSON
+    // Get total venues count
+    const totalVenues = await prisma.venue.count({
+      where: { ownerId }
+    });
+
+    // Get active bookings (current date)
+    const activeBookings = await prisma.booking.count({
+      where: {
+        court: { venue: { ownerId } },
+        startTime: { lte: new Date() },
+        endTime: { gte: new Date() },
+        status: "CONFIRMED"
+      }
+    });
+
+    // Get average rating
+    const avgRatingData = await prisma.venue.aggregate({
+      where: { ownerId },
+      _avg: { rating: true }
+    });
+
+    // Default JSON
     return NextResponse.json({
       stats: {
+        totalVenues,
+        activeBookings,
         earnings: earningRaw._sum.amount ?? 0,
-        bookings: bookingsCount,
+        avgRating: avgRatingData._avg.rating ?? 0
       },
       venues: venueReport,
+      // Transform venue data for different chart types
+      revenue: [{
+        date: format(startDate, "yyyy-MM-dd"),
+        revenue: earningRaw._sum.amount ?? 0
+      }],
+      bookings: venueReport.map(venue => ({
+        venue: venue.name,
+        confirmed: venue.totalBookings,
+        cancelled: 0,
+        pending: 0
+      })),
+      venuePopularity: venueReport.map(venue => ({
+        venue: venue.name,
+        bookings: venue.totalBookings
+      })),
+      ratings: venueReport.map(venue => ({
+        venue: venue.name,
+        rating: 0 // You might want to add rating to the venue query above
+      }))
     });
     } catch (err) {
     console.error("Error generating owner report:", err);

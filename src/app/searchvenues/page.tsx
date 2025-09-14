@@ -1,11 +1,11 @@
 
-// src/app/venues/page.tsx
+// src/app/searchvenues/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +68,7 @@ export default function VenuesPage() {
     <main className="flex flex-col min-h-screen">
       <section className="px-6 py-8 bg-gradient-to-b from-blue-50 to-white">
         <h1 className="text-3xl md:text-4xl font-bold text-center mb-8">
-          Sports Venues in Ahmedabad:{" "}
+          Sports Venues in Your City:{" "}
           <span className="text-blue-600">Discover and Book Nearby Venues</span>
         </h1>
 
@@ -122,13 +122,13 @@ export default function VenuesPage() {
             ) : (
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {venues.map((venue) => (
-                  <Card key={venue.id} className="shadow hover:shadow-lg transition">
+                  <Card key={venue.id} className="flex flex-col shadow hover:shadow-lg transition">
                     <img
                       src={venue.photos[0] || "https://via.placeholder.com/300x200"}
                       alt={venue.name}
                       className="w-full h-40 object-cover rounded-t-lg"
                     />
-                    <CardContent className="p-4">
+                    <CardContent className="p-4 ">
                       <h3 className="font-semibold text-lg">{venue.name}</h3>
                       <div className="flex items-center text-sm text-gray-500 mt-1">
                         <Star className="w-4 h-4 text-yellow-500 mr-1" />
@@ -141,14 +141,14 @@ export default function VenuesPage() {
                       <p className="text-gray-700 font-semibold mt-2">
                         ₹ {venue.minPricePerHour} - ₹ {venue.maxPricePerHour} / hr
                       </p>
-                      <div className="flex flex-wrap gap-2 mt-3">
+                   <div className="h-30">   <div className="flex flex-wrap gap-2 mt-3">
                         {venue.amenities.map((tag, i) => (
                           <Badge key={i} variant="secondary">
                             {tag}
                           </Badge>
                         ))}
-                      </div>
-                      <Button className="mt-4 w-full">View Details</Button>
+                      </div></div>
+                      <Button className="mt-4 w-full items-end">View Details</Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -232,7 +232,7 @@ function Filters({
         <label className="block text-sm font-medium mb-2">Price range (per hour)</label>
         <Slider value={price} onValueChange={setPrice} max={5500} step={50} className="w-full" />
         <div className="flex justify-between text-sm mt-2">
-          <span>₹ {price[0]}</span>
+          <span >₹ {price[0]}</span>
           <span>₹ {price[1]}</span>
         </div>
       </div>

@@ -142,6 +142,16 @@ export default function PlayerProfilePage() {
 }
 
   async function changePassword() {
+
+    if(!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    if(passwordForm.currentPassword == passwordForm.newPassword) {
+      toast.error("New password cannot be the same as current password");
+      return;
+    }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
       toast.error("Passwords do not match");
       return;

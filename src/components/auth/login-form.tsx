@@ -44,11 +44,9 @@ export function LoginForm() {
                 email: data.email,
                 password: data.password,
             });
-            if (res?.error) {
-                toast.error(res.error);
-            }
-                toast.success("Login successful!");
-                
+            if (res?.error) throw new Error(res.error);
+            if (!res?.ok) throw new Error("Login failed for unknown reasons please try again");
+            toast.success("Login successful!");
 
             // Fetch the session AFTER successful login to get role
             const sessionRes = await fetch("/api/auth/session");
@@ -63,7 +61,7 @@ export function LoginForm() {
             
         } catch (error) {
             console.error("Login error:", error);
-            toast.error("Login failed");
+            toast.error("Login failed for unknown reasons please try again");
         }
     };
 
