@@ -35,12 +35,12 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
     router.back();
   };
 
-  // --- CHANGE 1: Added state for the generation date ---
+  // 
   // We initialize it to today's date in YYYY-MM-DD format
   const [generationDate, setGenerationDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  // --- END CHANGE 1 ---
+  // 
 
   // Generator state
   const [start, setStart] = useState("07:00");
@@ -93,9 +93,9 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
     if (duration <= 0) return false;
     if (price < 0) return false;
     if (start >= end) return false;
-    // --- CHANGE 2: Also validate the new date field ---
+    //  Also validate the new date field ---
     if (!generationDate) return false;
-    // --- END CHANGE 2 ---
+    
     return true;
   }
 
@@ -107,7 +107,7 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
     try {
       setGenerating(true);
       
-      // --- CHANGE 3: Include the new date in the payload sent to the backend ---
+      // --- Include the new date in the payload sent to the backend ---
       const payload = {
         date: generationDate,
         startTime: start,
@@ -125,7 +125,7 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
           body: JSON.stringify(payload),
         }
       );
-      // --- END CHANGE 3 ---
+      
 
       if (!res.ok) {
         const errorData = await res.json();
@@ -203,7 +203,7 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
 
   useEffect(() => {
     fetchSlots();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [courtId, venueId]);
 
   return (

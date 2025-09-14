@@ -37,7 +37,7 @@ const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
     { href: "/owner/bookings", label: "Manage Bookings" },
     //{ href: "/contact", label: "Contact" },
     { href: "/owner/analytics", label: "Analytics" },
-    { href: "/owner/settings", label: "Settings" },
+    //{ href: "/owner/settings", label: "Settings" },
   ],
   ADMIN: [
     { href: "/", label: "Home" },
@@ -70,7 +70,7 @@ export default function Navbar() {
 
     const profileDropdownLinks: Record<Exclude<Role, "GUEST">, NavLink> = {
       USER: { href: "/player/profile", label: "Player Profile" },
-      OWNER: { href: "/owner/settings", label: "Owner Settings" },
+      OWNER: { href: "/owner/settings", label: "Owner Profile" },
       ADMIN: { href: "/admin/settings", label: "Admin Settings" },
     };
         
@@ -131,9 +131,9 @@ export default function Navbar() {
                 </Link>
               </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
+                {/* <DropdownMenuItem asChild>
                   <Link href="/profile">My Profile</Link>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
                 {role === "USER" && (
                   <DropdownMenuItem asChild>
                     <Link href="/player/bookings">My Bookings</Link>
