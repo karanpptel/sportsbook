@@ -68,8 +68,10 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
   async function fetchSlots() {
     try {
       setLoadingSlots(true);
+      // Add date as query parameter
+      const queryDate = generationDate || new Date().toISOString().split('T')[0];
       const res = await fetch(
-        `/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots`
+        `/api/dashboard/owner/venues/${venueId}/courts/${courtId}/slots?date=${queryDate}`
       );
 
       if (!res.ok) {
@@ -77,8 +79,14 @@ export function SlotManager({ courtId, venueId }: SlotManagerProps) {
       }
 
       const data = await res.json();
-      console.log("Fetched slots data:", data); // Debug log
-      setSlots(Array.isArray(data) ? data : []);
+      console.log("Fetched slots data for date:", queryDate, data); // Debug log
+      
+      // Sort slots by start time
+      const sortedSlots = Array.isArray(data) ? 
+        data.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime()) 
+        : [];
+      
+      setSlots(sortedSlots);
     } catch (e) {
       console.error("Error fetching slots:", e);
       toast.error("Failed to fetch slots");

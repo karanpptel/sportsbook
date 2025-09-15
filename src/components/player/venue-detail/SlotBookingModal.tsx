@@ -1,6 +1,6 @@
 // src/components/player/venue-detail/SlotBookingModal.tsx
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "react-toastify"// optional toast utility
 import { cn } from "@/lib/utils"; // shadcn helper for conditional classes
 import { loadStripe } from "@stripe/stripe-js";
+import { Badge } from "@/components/ui/badge";
 
 
 
@@ -22,18 +23,62 @@ interface Court {
   closeTime: number;
 }
 
+interface TimeSlot {
+  startTime: string;
+  endTime: string;
+  status: 'AVAILABLE' | 'BOOKED' | 'NOT_CREATED';
+}
+
 export default function SlotBookingModal({ court, venueId }: { court: Court; venueId: number }) {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
   const [date, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [slots, setSlots] = useState<TimeSlot[]>([]);
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-   // generate simple timeslots from openTime-closeTime (for more details watch summary below)
-  const times = Array.from(
-    { length: Math.max(0, court.closeTime - court.openTime) },
-    (_, i) => `${(court.openTime + i).toString().padStart(2, "0")}:00`
-  );
+  // Get today's date in YYYY-MM-DD format for min date
+  const today = new Date().toISOString().split('T')[0];
+
+  // Fetch available slots when date changes
+  useEffect(() => {
+    async function fetchAvailableSlots() {
+      if (!date || !court.id) return;
+      
+      setCheckingAvailability(true);
+      try {
+        const response = await fetch(`/api/dashboard/player/court/${court.id}?date=${date}`);
+        if (!response.ok) throw new Error('Failed to fetch slots');
+        
+        const data = await response.json();
+        if (!data.slots || !Array.isArray(data.slots)) {
+          throw new Error('Invalid slot data received');
+        }
+
+        // Reset time selection when date changes
+        setTime("");
+        setSlots(data.slots);
+
+        console.log('Debug - Fetched Slots:', {
+          date,
+          courtId: court.id,
+          slotsCount: data.slots.length,
+          firstSlot: data.slots[0],
+          lastSlot: data.slots[data.slots.length - 1]
+        });
+
+      } catch (error) {
+        console.error('Error fetching slots:', error);
+        toast.error('Failed to fetch available slots');
+        setSlots([]); // Reset slots on error
+      } finally {
+        setCheckingAvailability(false);
+      }
+    }
+
+    fetchAvailableSlots();
+  }, [date, court.id]);
 
   async function handleConfirm() {
     if (!date || !time) {
@@ -49,8 +94,20 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
     setLoading(true);
 console.log("court in handleConfirm", court.id)
     try {
-      const startTime = new Date(`${date}T${time}`);
+      // Create the booking time using the date and selected time slot in UTC
+      const [hours] = time.split(':').map(Number);
+      const startDateTime = `${date}T${time}:00Z`; // Add Z to make it UTC
+      const startTime = new Date(startDateTime);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
+      
+      console.log('Debug - Booking Times:', {
+        startDateTime,
+        startTimeISO: startTime.toISOString(),
+        endTimeISO: endTime.toISOString(),
+        startTimeLocal: startTime.toString(),
+        endTimeLocal: endTime.toString()
+      });
+      
       // Step 1: Create booking
       const bookingRes = await fetch("/api/dashboard/player/bookings", {
         method: "POST",
@@ -67,8 +124,12 @@ console.log("court in handleConfirm", court.id)
         }),
       });
 
-      if (!bookingRes.ok) throw new Error("Failed to create booking");
-        const bookingData = await bookingRes.json();
+      const bookingData = await bookingRes.json();
+      
+      if (!bookingRes.ok) {
+        // Show specific error message from the API
+        throw new Error(bookingData.error || "Failed to create booking");
+      }
         const bookingId = bookingData.booking?.id || bookingData.bookingId;
 
         // Step 2: Create Stripe checkout session
@@ -124,7 +185,11 @@ console.log("court in handleConfirm", court.id)
               id="date"
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              min={today}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setTime(""); // Reset selected time when date changes
+              }}
               className="mt-1"
             />
           </div>
@@ -133,21 +198,63 @@ console.log("court in handleConfirm", court.id)
           <div>
             <Label className="text-sm font-medium">Time slot</Label>
             <div className="grid grid-cols-3 gap-2 mt-2 max-h-40 overflow-y-auto pr-1">
-              {times.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setTime(t)}
-                  className={cn(
-                    "text-sm px-3 py-2 rounded-lg border transition-all duration-150",
-                    time === t
-                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                      : "bg-white hover:bg-slate-100"
-                  )}
-                >
-                  {t}
-                </button>
-              ))}
+              {checkingAvailability ? (
+                <div className="col-span-3 text-center py-4 text-gray-500">
+                  Checking availability...
+                </div>
+              ) : slots.length > 0 ? (
+                slots.map((slot) => {
+                  // Parse the UTC time
+                  const slotDate = new Date(slot.startTime);
+                  // Convert UTC hours to local hours
+                  const hours = slotDate.getUTCHours().toString().padStart(2, '0');
+                  const slotTime = `${hours}:00`;
+                  const isNotCreated = slot.status === 'NOT_CREATED';
+                  const isBooked = slot.status === 'BOOKED';
+
+                  console.log('Debug - Slot Time:', {
+                    slotStartTime: slot.startTime,
+                    parsedDate: slotDate.toISOString(),
+                    utcHours: hours,
+                    slotTime,
+                    status: slot.status
+                  });
+                  return (
+                    <button
+                      key={slot.startTime}
+                      type="button"
+                      onClick={() => setTime(slotTime)}
+                      disabled={isBooked || isNotCreated}
+                      className={cn(
+                        "text-sm px-3 py-2 rounded-lg border transition-all duration-150 relative",
+                        isBooked || isNotCreated
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : time === slotTime
+                          ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                          : "bg-white hover:bg-slate-100"
+                      )}
+                    >
+                      {slotTime}
+                      <Badge 
+                        className={cn(
+                          "absolute -top-2 -right-2 text-[10px] px-1",
+                          isBooked
+                            ? "bg-red-100 text-red-600"
+                            : isNotCreated
+                            ? "bg-gray-100 text-gray-600"
+                            : "bg-green-100 text-green-600"
+                        )}
+                      >
+                        {isNotCreated ? "unavailable" : slot.status.toLowerCase()}
+                      </Badge>
+                    </button>
+                  );
+                })
+              ) : (
+                <div className="col-span-3 text-center py-4 text-gray-500">
+                  Select a date to see available slots
+                </div>
+              )}
             </div>
           </div>
 

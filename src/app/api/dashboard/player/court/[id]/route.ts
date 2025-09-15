@@ -46,35 +46,82 @@ export async function GET(
         }
 
 
-        //fetch bookings for the court on the selected date
-        const bookings = await prisma.booking.findMany({
+        // Fetch created slots for the court on the selected date
+        const createdSlots = await prisma.slot.findMany({
             where: {
                 courtId,
                 startTime: { gte: startOfDay, lte: endOfDay },
             },
+        });
+
+        // Fetch bookings for the court on the selected date
+        const bookings = await prisma.booking.findMany({
+            where: {
+                courtId,
+                startTime: { gte: startOfDay, lte: endOfDay },
+                status: { in: ["PENDING", "CONFIRMED"] }
+            },
             select: {startTime: true, endTime: true, status: true},
         });
 
-
-         // Generate slots
+        // Generate slots
         const availableSlots = [];
+        const now = new Date();
+        const isToday = startOfDay.getDate() === now.getDate() && 
+                       startOfDay.getMonth() === now.getMonth() && 
+                       startOfDay.getFullYear() === now.getFullYear();
+        
+        // Always start from court's opening time for future dates
+        const startHour = isToday ? Math.max(now.getHours(), court.openTime) : court.openTime;
+        
+        console.log('Debug - Slot Generation:', {
+            courtOpenTime: court.openTime,
+            courtCloseTime: court.closeTime,
+            startHour,
+            date: selectedDate,
+            createdSlotsCount: createdSlots.length,
+            bookingsCount: bookings.length
+        });
+        
         for (let hour = court.openTime; hour < court.closeTime; hour++) {
-          const slotStart = new Date(selectedDate);
-          slotStart.setHours(hour, 0, 0, 0);
-          const slotEnd = new Date(slotStart);
-          slotEnd.setHours(hour + 1);
-    
-          const isBooked = bookings.some(
-            (b) =>
-          new Date(b.startTime).getTime() < slotEnd.getTime() &&
-          new Date(b.endTime).getTime() > slotStart.getTime()
-      );
+            const slotStart = new Date(selectedDate);
+            slotStart.setHours(hour, 0, 0, 0);
+            const slotEnd = new Date(slotStart);
+            slotEnd.setHours(hour + 1);
 
-        availableSlots.push({
-        startTime: slotStart,
-        endTime: slotEnd,
-        status: isBooked ? "BOOKED" : "AVAILABLE"
-      });
+            // For today's slots, skip past hours
+            if (isToday && hour < now.getHours()) {
+                continue;
+            }
+
+            // Check if slot is created by owner - use exact time matching
+            const slotCreated = createdSlots.some(slot => {
+                const slotHour = new Date(slot.startTime).getHours();
+                return slotHour === hour;
+            });
+
+            // If slot is not created, mark as NOT_CREATED
+            if (!slotCreated) {
+                availableSlots.push({
+                    startTime: slotStart,
+                    endTime: slotEnd,
+                    status: "NOT_CREATED"
+                });
+                continue;
+            }
+
+            // Check if slot is booked
+            const isBooked = bookings.some(
+                b =>
+                    new Date(b.startTime).getTime() < slotEnd.getTime() &&
+                    new Date(b.endTime).getTime() > slotStart.getTime()
+            );
+
+            availableSlots.push({
+                startTime: slotStart,
+                endTime: slotEnd,
+                status: isBooked ? "BOOKED" : "AVAILABLE"
+            });
     }
 
 

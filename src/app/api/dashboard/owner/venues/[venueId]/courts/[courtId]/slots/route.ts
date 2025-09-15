@@ -167,7 +167,34 @@ export async function POST(
         if (!date || !startTime || !endTime || !duration || price === undefined) {
             return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
         }
-        // --- END CHANGE 1 ---
+
+        // Validate date format and ensure it's not in the past
+        const selectedDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (isNaN(selectedDate.getTime())) {
+            return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+        }
+
+        if (selectedDate < today) {
+            return NextResponse.json({ error: "Cannot create slots for past dates" }, { status: 400 });
+        }
+
+        // Validate time format
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+        if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+            return NextResponse.json({ error: "Invalid time format. Use HH:mm" }, { status: 400 });
+        }
+
+        // Validate price and duration
+        if (price < 0) {
+            return NextResponse.json({ error: "Price cannot be negative" }, { status: 400 });
+        }
+
+        if (duration <= 0 || duration > 480) { // max 8 hours
+            return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
+        }
         
         // --- CHANGE 2: Use the provided date string to create the slots ---
         // Instead of using `new Date()`, we construct date strings from the input
@@ -204,27 +231,98 @@ export async function POST(
             return NextResponse.json({ error: "No slots could be generated with the given times." }, { status: 400 });
         }
         
-        // This transaction correctly deletes old slots and creates new ones
+        // Only delete slots for the specific date that don't have any bookings
         const result = await prisma.$transaction(async (tx) => {
+            // Convert date string to start and end of day for comparison
+            const dateStart = new Date(date);
+            dateStart.setUTCHours(0, 0, 0, 0);
+            
+            const dateEnd = new Date(date);
+            dateEnd.setUTCHours(23, 59, 59, 999);
+
+            // Find any existing bookings for this date range
+            const existingBookings = await tx.booking.findMany({
+                where: {
+                    courtId: courtIdNum,
+                    startTime: {
+                        gte: dateStart,
+                        lte: dateEnd
+                    },
+                    status: {
+                        in: ['CONFIRMED', 'PENDING']
+                    }
+                },
+                select: {
+                    startTime: true,
+                    endTime: true
+                }
+            });
+
+            // Delete only unbookedslots for this specific date
             await tx.slot.deleteMany({
                 where: {
                     courtId: courtIdNum,
+                    startTime: {
+                        gte: dateStart,
+                        lte: dateEnd
+                    },
+                    isBooked: false
                 },
             });
 
-            const createdSlots = await tx.slot.createMany({
-                data: slotsToCreate,
+            // Filter out slots that would overlap with existing bookings
+            const nonOverlappingSlots = slotsToCreate.filter(slot => {
+                return !existingBookings.some(booking => {
+                    return (slot.startTime >= booking.startTime && slot.startTime < booking.endTime) ||
+                           (slot.endTime > booking.startTime && slot.endTime <= booking.endTime);
+                });
             });
 
-            return createdSlots;
+            if (nonOverlappingSlots.length === 0) {
+                return { count: 0, message: "No new slots could be created due to existing bookings" };
+            }
+
+            const createdSlots = await tx.slot.createMany({
+                data: nonOverlappingSlots,
+            });
+
+            return {
+                count: createdSlots.count,
+                message: nonOverlappingSlots.length < slotsToCreate.length 
+                    ? "Some slots were skipped due to existing bookings"
+                    : "All slots created successfully"
+            };
         });
 
         return NextResponse.json({
-            message: "Slots generated successfully",
+            message: result.message,
             count: result.count,
         });
     } catch (error) {
         console.error("Error generating slots:", error);
-        return NextResponse.json({ error: "Failed to generate slots" }, { status: 500 });
+        
+        // Handle specific error cases
+        if (error instanceof Error) {
+            if (error.message.includes("Unique constraint")) {
+                return NextResponse.json({ 
+                    error: "Duplicate slots detected for this time period" 
+                }, { status: 400 });
+            }
+            
+            if (error.message.includes("Court not found")) {
+                return NextResponse.json({ 
+                    error: "Court not found or no permission to create slots" 
+                }, { status: 404 });
+            }
+
+            return NextResponse.json({ 
+                error: error.message 
+            }, { status: 400 });
+        }
+
+        return NextResponse.json({ 
+            error: "Failed to generate slots",
+            details: "An unexpected error occurred while creating slots"
+        }, { status: 500 });
     }
 }
