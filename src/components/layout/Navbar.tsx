@@ -29,6 +29,7 @@ const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
     { href: "/player/venues", label: "Venues" },
     { href: "/player/bookings", label: "My Bookings" },
     { href: "/contact", label: "Contact" },
+    { href: "/player/profile", label: "Profile" },
   ],
   OWNER: [
     //{ href: "/", label: "Home" },
@@ -37,7 +38,7 @@ const navLinks: Record<Exclude<Role, "GUEST">, NavLink[]> = {
     { href: "/owner/bookings", label: "Manage Bookings" },
     //{ href: "/contact", label: "Contact" },
     { href: "/owner/analytics", label: "Analytics" },
-    //{ href: "/owner/settings", label: "Settings" },
+    { href: "/owner/settings", label: "Profile" },
   ],
   ADMIN: [
     { href: "/", label: "Home" },

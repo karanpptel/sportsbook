@@ -63,7 +63,7 @@ export function RecommendedVenues({ venues = [] }: RecommendedVenuesProps) {
           {venues.map((venue) => (
             <Link
               key={venue.id}
-              href={`/venues/${venue.id}`}
+              href={`/player/venues/${venue.id}`}
               className="group rounded-lg overflow-hidden border border-gray-100 hover:border-gray-200 hover:shadow-md transition-all"
             >
               <div className="relative h-48 w-full">

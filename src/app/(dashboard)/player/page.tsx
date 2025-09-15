@@ -41,6 +41,7 @@ interface RecommendedVenue {
 
 
 
+
 export default function PlayerDashboardPage() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,23 @@ export default function PlayerDashboardPage() {
     fetchDashboardData();
   }, []);
 
+  if (error) {
+    return (
+      <ProtectedRoutes allowedRoles={["USER", "PLAYER"]}>
+        <div className="flex flex-col items-center justify-center min-h-[400px] p-6">
+          <div className="text-red-500 mb-4">{error}</div>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </ProtectedRoutes>
+    );
+  }
+
+
   if (loading) {
     return (
       <ProtectedRoutes allowedRoles={["USER", "PLAYER"]}>
@@ -117,10 +135,11 @@ export default function PlayerDashboardPage() {
         
         <StatsSection stats={stats} />
         
-        <div className="grid grid-cols-1 gap-6">
-          <BookingsSection recentBookings={recentBookings} />
-          <RecommendedVenues venues={recommendedVenues} />
+         <div className="grid grid-cols-1 gap-6">
+          {Array.isArray(recentBookings) && <BookingsSection recentBookings={recentBookings} />}
+          {Array.isArray(recommendedVenues) && <RecommendedVenues venues={recommendedVenues} />}
         </div>
+
       </div>
     </ProtectedRoutes>
   );
