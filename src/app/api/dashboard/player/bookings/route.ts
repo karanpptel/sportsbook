@@ -203,7 +203,7 @@ export async function POST(req: NextRequest) {
           }
         );
 
-        console.log('Successfully created booking:', booking);
+        //console.log('Successfully created booking:', booking);
         return NextResponse.json({ 
             booking,
             message: "Booking created successfully" 

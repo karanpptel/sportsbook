@@ -38,7 +38,6 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [checkingAvailability, setCheckingAvailability] = useState(false);
 
-  // Get today's date in YYYY-MM-DD format for min date
   const today = new Date().toISOString().split('T')[0];
 
   // Fetch available slots when date changes

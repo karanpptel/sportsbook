@@ -142,7 +142,7 @@ model Booking {
 
   //Relationships
   payment        Payment? // PAID, UNPAID, REFUNDED
-  paymentId      Int?     @unique
+  //paymentId      Int?     @unique
   idempotencyKey String?  @unique
   notes          String?
   createdAt      DateTime @default(now())
@@ -155,11 +155,11 @@ model Booking {
 }
 
 model Payment {
-  id Int @id @default(autoincrement())
+  id                    Int         @id @default(autoincrement())
 
   //Relationships
-  booking               Booking?      @relation(fields: [bookingId], references: [id])
-  bookingId             Int?          @unique
+  booking               Booking      @relation(fields: [bookingId], references: [id])
+  bookingId             Int          @unique
   gateway               String        @default("stripe")
   stripePaymentIntentId String?       @unique
   stripeChargeId        String? // optional
