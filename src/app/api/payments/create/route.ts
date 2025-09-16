@@ -25,7 +25,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-        // Create Stripe Checkout Session
+
+     // 1. Check if payment already exists for this booking
+    const existingPayment = await prisma.payment.findUnique({
+      where: { bookingId: booking.id },
+    });
+
+    if (existingPayment) {
+      // Optionally, you could check payment status here
+      return NextResponse.json({ sessionId: existingPayment.stripePaymentIntentId });
+    }
+
+        // 2. Create Stripe Checkout Session
         const checkoutSession = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
@@ -50,18 +61,19 @@ export async function POST(request: NextRequest) {
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/player/bookings?status=CANCELLED`,
         });
 
-            // Save payment
+            // 3. Save payment
         await prisma.payment.create({
         data: {
             bookingId: booking.id,
             stripePaymentIntentId: checkoutSession.id,
             status: "PENDING",
             amount: booking.court.pricePerHour * 100, // smallest currency unit
-            currency: "usd", // or booking.court.currency if dynamic
+            currency:  booking.court.currency , // or booking.court.currency if dynamic
             
         },
         });
-
+        console.log("response bheja");
+        
         return NextResponse.json({ sessionId: checkoutSession.id });
     } catch (err) {
     console.error("Error creating payment intent:", err);

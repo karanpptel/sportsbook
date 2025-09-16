@@ -43,7 +43,10 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
 
   // Fetch available slots when date changes
   useEffect(() => {
-    async function fetchAvailableSlots() {
+      fetchAvailableSlots();
+  }, [date, court.id]);
+
+   async function fetchAvailableSlots() {
       if (!date || !court.id) return;
       
       setCheckingAvailability(true);
@@ -76,9 +79,6 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
         setCheckingAvailability(false);
       }
     }
-
-    fetchAvailableSlots();
-  }, [date, court.id]);
 
   async function handleConfirm() {
     if (!date || !time) {
@@ -145,6 +145,8 @@ console.log("court in handleConfirm", court.id)
         // Step 3: Show Stripe payment modal (use @stripe/stripe-js)
         // Example:
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+        if(stripe) console.log("Stripe key:", process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        
         if (stripe && sessionId) {
           await stripe.redirectToCheckout({ sessionId });
         }
@@ -206,8 +208,8 @@ console.log("court in handleConfirm", court.id)
                 slots.map((slot) => {
                   // Parse the UTC time
                   const slotDate = new Date(slot.startTime);
-                  // Convert UTC hours to local hours
-                  const hours = slotDate.getUTCHours().toString().padStart(2, '0');
+                  // Use local time (browser time zone)
+                  const hours = slotDate.getHours().toString().padStart(2, '0');
                   const slotTime = `${hours}:00`;
                   const isNotCreated = slot.status === 'NOT_CREATED';
                   const isBooked = slot.status === 'BOOKED';
