@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
             bookingId: booking.id,
             stripePaymentIntentId: checkoutSession.id,
             status: "PENDING",
-            amount: booking.court.pricePerHour * 100, 
+            amount: booking.court.pricePerHour * 100, // smallest currency unit
             currency: "usd", // or booking.court.currency if dynamic
             
         },
