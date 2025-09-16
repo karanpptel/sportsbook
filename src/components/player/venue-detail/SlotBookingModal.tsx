@@ -12,6 +12,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Badge } from "@/components/ui/badge";
 
 // testign commit ..
+//testing commit 2
 
 interface Court {
   id: number;
