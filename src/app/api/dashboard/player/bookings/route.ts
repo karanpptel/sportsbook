@@ -125,10 +125,8 @@ export async function POST(req: NextRequest) {
             const slot = await tx.slot.findFirst({
                 where: {
                     courtId,
-                    AND: [
-                        { startTime: start },
-                        { isBooked: false }
-                    ]
+                    startTime: start,
+                    isBooked: false
                 }
             });
 
@@ -136,7 +134,7 @@ export async function POST(req: NextRequest) {
                 throw new Error("This slot is not available for booking");
             }
 
-            // Check if the court exists (within transaction)
+            // Check for overlapping bookings with strict inequalities
             const court = await tx.court.findUnique({
                 where: { id: courtId }
             });
@@ -149,13 +147,17 @@ export async function POST(req: NextRequest) {
             const overlappingBooking = await tx.booking.findFirst({
                 where: {
                     courtId,
-                    startTime: { lte: end },
-                    endTime: { gte: start },
+                     // An existing booking starts BEFORE the new one ends
+                    startTime: { lt: end }, // Is existing startTime < 09:00? (Yes, 07:00 is)
+
+                     // AND an existing booking ends AFTER the new one starts
+                    endTime: { gt: start }, // Is existing endTime > 08:00? (Yes, 08:00 is)
                     status: { in: ["PENDING", "CONFIRMED"] }
                 }
             });
 
             if (overlappingBooking) {
+                // This will now only trigger for genuine overlaps, not adjacent slots.
                 throw new Error("This time slot is already booked");
             }
 
@@ -174,24 +176,13 @@ export async function POST(req: NextRequest) {
                     endTime: end,
                     notes,
                     idempotencyKey,
-                    status: "PENDING",
-                    payment: {
-                        create: {
-                            amount: court.pricePerHour,
-                            currency: court.currency,
-                            status: "PENDING"
-                        }
-                    }
+                    status: "PENDING", // Status is PENDING until payment is made
+                   
                 },
                 include: {
                     court: true,
-                    user: {
-                        select: {
-                            fullName: true,
-                            email: true
-                        }
-                    },
-                    payment: true
+                    user: { select: { fullName: true, email: true } },
+                   //  payment: true
                 }
             });
 
@@ -215,14 +206,16 @@ export async function POST(req: NextRequest) {
             if (error.message === "Court not found") {
                 return NextResponse.json({ error: "Court not found" }, { status: 404 });
             }
-            if (error.message === "This slot is not available for booking") {
-                return NextResponse.json({ error: "Selected time slot is not available" }, { status: 400 });
-            }
             if (error.message === "This time slot is already booked") {
                 return NextResponse.json({ error: "This time slot has already been booked" }, { status: 400 });
             }
+            if (error.message.includes("This slot is not available")) {
+                return NextResponse.json({ error: "Selected time slot is not available" }, { status: 409 }); // 409 Conflict is more appropriate
+            }
             return NextResponse.json({ error: error.message }, { status: 400 });
         }
+
+        
         
         return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });
     }

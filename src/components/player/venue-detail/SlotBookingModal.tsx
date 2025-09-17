@@ -55,6 +55,7 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
         if (!response.ok) throw new Error('Failed to fetch slots');
         
         const data = await response.json();
+        console.log('Fetched Slot Data:', data);
         if (!data.slots || !Array.isArray(data.slots)) {
           throw new Error('Invalid slot data received');
         }
@@ -92,21 +93,23 @@ export default function SlotBookingModal({ court, venueId }: { court: Court; ven
     }
 
     setLoading(true);
-console.log("court in handleConfirm", court.id)
+
+  console.log("court in handleConfirm", court.id)
+
     try {
       // Create the booking time using the date and selected time slot in UTC
-      const [hours] = time.split(':').map(Number);
+      //  const [hours] = time.split(':').map(Number);
       const startDateTime = `${date}T${time}:00Z`; // Add Z to make it UTC
       const startTime = new Date(startDateTime);
       const endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // 1 hour duration
       
-      console.log('Debug - Booking Times:', {
-        startDateTime,
-        startTimeISO: startTime.toISOString(),
-        endTimeISO: endTime.toISOString(),
-        startTimeLocal: startTime.toString(),
-        endTimeLocal: endTime.toString()
-      });
+      // console.log('Debug - Booking Times:', {
+      //   startDateTime,
+      //   startTimeISO: startTime.toISOString(),
+      //   endTimeISO: endTime.toISOString(),
+      //   startTimeLocal: startTime.toString(),
+      //   endTimeLocal: endTime.toString()
+      // });
       
       // Step 1: Create booking
       const bookingRes = await fetch("/api/dashboard/player/bookings", {
@@ -138,24 +141,44 @@ console.log("court in handleConfirm", court.id)
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ bookingId }),
         });
-        if (!paymentRes.ok) throw new Error("Failed to create payment intent");
+        
+         if (!paymentRes.ok) {
+            const errorData = await paymentRes.json();
+            throw new Error(errorData.error || "Failed to create payment session");
+          }
+          
         const {sessionId} = await paymentRes.json();
+
+         if (!sessionId) {
+            throw new Error("Could not retrieve payment session ID.");
+        }
         //const clientSecret = paymentData.clientSecret;
 
         // Step 3: Show Stripe payment modal (use @stripe/stripe-js)
         // Example:
         const stripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
-        if(stripe) console.log("Stripe key:", process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-        
-        if (stripe && sessionId) {
-          await stripe.redirectToCheckout({ sessionId });
-        }
 
-      // Success: show toast, close modal, etc.
-      toast.success("Booking created! Please complete payment to confirm your booking.");
-      setOpen(false);
-      setDate("");
-      setTime("");
+            if (stripe) {
+            // --- FIX: Do not await the redirect and handle the potential error ---
+            const result = await stripe.redirectToCheckout({ sessionId });
+
+            // If redirectToCheckout fails, it will return an object with an error property.
+            // This code will only execute if the redirect fails.
+            if (result.error) {
+              console.error("Stripe redirect error:", result.error.message);
+              toast.error(result.error.message || "Failed to redirect to payment.");
+            }
+            
+          } else {
+            throw new Error("Stripe.js failed to load.");
+          }
+
+          // --- FIX: Remove the success toast and state resets from the success path ---
+          // These lines should not be reached if the redirect is successful.
+          // toast.success("Booking created! Please complete payment to confirm your booking.");
+          // setOpen(false);
+          // setDate("");
+          // setTime("");
     } catch (err) {
       console.error(err);
       toast.error(err instanceof Error ? err.message : "Booking or payment failed. Please try again.");
@@ -200,64 +223,61 @@ console.log("court in handleConfirm", court.id)
           <div>
             <Label className="text-sm font-medium">Time slot</Label>
             <div className="grid grid-cols-3 gap-2 mt-2 max-h-40 overflow-y-auto pr-1">
-              {checkingAvailability ? (
-                <div className="col-span-3 text-center py-4 text-gray-500">
-                  Checking availability...
-                </div>
-              ) : slots.length > 0 ? (
-                slots.map((slot) => {
-                  // Parse the UTC time
-                  const slotDate = new Date(slot.startTime);
-                  // Use local time (browser time zone)
-                  const hours = slotDate.getHours().toString().padStart(2, '0');
-                  const slotTime = `${hours}:00`;
-                  const isNotCreated = slot.status === 'NOT_CREATED';
-                  const isBooked = slot.status === 'BOOKED';
-
-                  console.log('Debug - Slot Time:', {
-                    slotStartTime: slot.startTime,
-                    parsedDate: slotDate.toISOString(),
-                    utcHours: hours,
-                    slotTime,
-                    status: slot.status
-                  });
-                  return (
-                    <button
-                      key={slot.startTime}
-                      type="button"
-                      onClick={() => setTime(slotTime)}
-                      disabled={isBooked || isNotCreated}
-                      className={cn(
-                        "text-sm px-3 py-2 rounded-lg border transition-all duration-150 relative",
-                        isBooked || isNotCreated
-                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                          : time === slotTime
-                          ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
-                          : "bg-white hover:bg-slate-100"
-                      )}
-                    >
-                      {slotTime}
-                      <Badge 
-                        className={cn(
-                          "absolute -top-2 -right-2 text-[10px] px-1",
-                          isBooked
-                            ? "bg-red-100 text-red-600"
-                            : isNotCreated
-                            ? "bg-gray-100 text-gray-600"
-                            : "bg-green-100 text-green-600"
-                        )}
-                      >
-                        {isNotCreated ? "unavailable" : slot.status.toLowerCase()}
-                      </Badge>
-                    </button>
-                  );
-                })
-              ) : (
-                <div className="col-span-3 text-center py-4 text-gray-500">
-                  Select a date to see available slots
-                </div>
-              )}
+          {checkingAvailability ? (
+            <div className="col-span-3 text-center py-4 text-gray-500">
+              Checking availability...
             </div>
+          ) : slots.length > 0 ? (
+            slots.map((slot) => {
+              // Parse the UTC time string received from the API
+              const slotDate = new Date(slot.startTime);
+              
+              // --- FIX: Use getUTCHours() to display the correct time ---
+              // This ensures the time shown is the UTC hour, matching what the owner set,
+              // regardless of the user's local browser timezone.
+              const hours = slotDate.getUTCHours().toString().padStart(2, '0');
+              const slotTime = `${hours}:00`;
+
+              const isNotCreated = slot.status === 'NOT_CREATED';
+              const isBooked = slot.status === 'BOOKED';
+
+              return (
+                <button
+                  key={slot.startTime}
+                  type="button"
+                  onClick={() => setTime(slotTime)}
+                  disabled={isBooked || isNotCreated}
+                  className={cn(
+                    "text-sm px-3 py-2 rounded-lg border transition-all duration-150 relative",
+                    isBooked || isNotCreated
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : time === slotTime
+                      ? "bg-emerald-600 text-white border-emerald-600 shadow-sm"
+                      : "bg-white hover:bg-slate-100"
+                  )}
+                >
+                  {slotTime}
+                  <Badge 
+                    className={cn(
+                      "absolute -top-2 -right-2 text-[10px] px-1",
+                      isBooked
+                        ? "bg-red-100 text-red-600"
+                        : isNotCreated
+                        ? "bg-gray-100 text-gray-600"
+                        : "bg-green-100 text-green-600"
+                    )}
+                  >
+                    {isNotCreated ? "unavailable" : slot.status.toLowerCase()}
+                  </Badge>
+                </button>
+              );
+            })
+          ) : (
+            <div className="col-span-3 text-center py-4 text-gray-500">
+              Select a date to see available slots
+            </div>
+          )}
+        </div>
           </div>
 
           {/* Price & Actions */}

@@ -14,6 +14,7 @@ export default function BookingsPage() {
     async function fetchBookings() {
       try {
         const res = await fetch("/api/dashboard/player/bookings");
+        
         const data = await res.json();
         setBookings(data.booking || []);
       } catch (err) {

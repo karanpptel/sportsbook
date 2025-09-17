@@ -16,27 +16,32 @@ export async function POST(request: NextRequest) {
 
     const { bookingId } = await request.json();
 
-    const booking = await prisma.booking.findUnique({
+    if (!bookingId) {
+        return NextResponse.json({ error: "Booking ID is required" }, { status: 400 });
+    }
+
+   const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { court: { include: { venue: true } } },
+      include: { 
+        court: { include: { venue: true } },
+        payment: true // Include the related payment record
+      },
     });
 
     if (!booking) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
+    // --- REFACTORED LOGIC ---
 
-     // 1. Check if payment already exists for this booking
-    const existingPayment = await prisma.payment.findUnique({
-      where: { bookingId: booking.id },
-    });
 
-    if (existingPayment) {
-      // Optionally, you could check payment status here
-      return NextResponse.json({ sessionId: existingPayment.stripePaymentIntentId });
+     // 1. If a payment record exists and already has a Stripe Session ID, reuse it.
+    if (booking.payment?.stripePaymentIntentId) {
+      // You could add logic here to check if the session is still valid, but for now, we just return it.
+      return NextResponse.json({ sessionId: booking.payment.stripePaymentIntentId });
     }
 
-        // 2. Create Stripe Checkout Session
+         // 2. If we are here, we need to create a new Stripe Checkout Session.
         const checkoutSession = await stripe.checkout.sessions.create({
         payment_method_types: ["card"],
         mode: "payment",
@@ -44,11 +49,12 @@ export async function POST(request: NextRequest) {
         line_items: [
             {
             price_data: {
-                currency: booking.court.currency,
+                currency: booking.court.currency.toLowerCase(),
                 unit_amount: booking.court.pricePerHour * 100,
                 product_data: {
                 name: `${booking.court.name} - ${booking.court.sport}`,
                 description: `Venue: ${booking.court.venue.name}`,
+                images: booking.court.venue.photos.length > 0 ? [booking.court.venue.photos[0]] : [],
                 },
             },
             quantity: 1,
@@ -56,22 +62,35 @@ export async function POST(request: NextRequest) {
         ],
         metadata: {
             bookingId: booking.id.toString(),
+             userId: session.user.id, 
         },
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/player/bookings?status=SUCCEEDED`,
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/player/bookings?status=SUCCEEDED&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/player/bookings?status=CANCELLED`,
         });
 
-            // 3. Save payment
-        await prisma.payment.create({
-        data: {
+
+          if (!checkoutSession.id) {
+              throw new Error("Failed to create Stripe checkout session.");
+          }
+
+
+          // --- FIX: Use `upsert` to create or update the payment record robustly ---
+        await prisma.payment.upsert({
+        where: { bookingId: booking.id },
+        // Update the existing record if it was found
+        update: {
+            stripePaymentIntentId: checkoutSession.id,
+            status: "PENDING",
+        },
+        // Create a new record if one didn't exist
+        create: {
             bookingId: booking.id,
             stripePaymentIntentId: checkoutSession.id,
             status: "PENDING",
-            amount: booking.court.pricePerHour * 100, // smallest currency unit
-            currency:  booking.court.currency , // or booking.court.currency if dynamic
-            
+            amount: booking.court.pricePerHour,
+            currency: booking.court.currency,
         },
-        });
+    });
         console.log("response bheja");
         
         return NextResponse.json({ sessionId: checkoutSession.id });

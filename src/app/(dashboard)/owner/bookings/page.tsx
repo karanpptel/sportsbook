@@ -131,7 +131,7 @@ export default function OwnerBookingsPage() {
                   <Badge>{b.status}</Badge>
                   {b.payment && (
                     <Badge variant="outline">
-                      Payment: ₹{b.payment.amount / 100} ({b.payment.status})
+                      Payment: ₹{b.payment.amount} ({b.payment.status})
                     </Badge>
                   )}
                 </div>

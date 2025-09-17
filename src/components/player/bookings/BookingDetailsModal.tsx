@@ -18,6 +18,8 @@ function formatDate(dateStr: string) {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: 'UTC',  // It's good practice to add this here too
+
   });
 }
 
@@ -25,6 +27,8 @@ function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString("en-IN", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: 'UTC',  // Ensures time is shown in UTC
+    hour12: true,    // Use AM/PM for better readability
   });
 }
 

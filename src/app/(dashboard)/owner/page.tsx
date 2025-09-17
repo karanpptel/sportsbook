@@ -80,7 +80,7 @@ export default function OwnerDashboardPage() {
           },
           {
             title: "Earnings (This Month)",
-            value: `₹${data.stats.earnings/ 100}`,
+            value: `₹${data.stats.earnings}`,
             icon: <DollarSign className="text-yellow-600 w-6 h-6" />,
           },
         ]);
